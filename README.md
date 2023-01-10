@@ -1,2 +1,2 @@
 # golang
-This catalog repo holds golang related resources
+This verified catalog repo holds golang related Tekton resources
