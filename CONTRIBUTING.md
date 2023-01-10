@@ -1,0 +1,1 @@
+See the `tektoncd-catalog` [Contributing](https://github.com/tektoncd-catalog/.github/blob/main/CONTRIBUTING.md) doc

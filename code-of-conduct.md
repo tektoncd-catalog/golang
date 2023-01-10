@@ -1,0 +1,1 @@
+See the `tektoncd-catalog` [code of conduct](https://github.com/tektoncd-catalog/.github/blob/main/code-of-conduct.md) doc
