@@ -1,0 +1,48 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: golang-test-pipeline-run-basic-stringutil
+spec:
+  pipelineRef:
+    name: golang-test-pipeline
+  params:
+    - name: url
+      value: https://github.com/golang/example
+    - name: package
+      value: golang.org/x/example
+    - name: packages
+      value: "./stringutil/"
+  workspaces:
+    - name: shared-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 500Mi
+
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: golang-test-pipeline-run-basic-outyet
+spec:
+  pipelineRef:
+    name: golang-test-pipeline
+  params:
+    - name: url
+      value: https://github.com/golang/example
+    - name: package
+      value: golang.org/x/example
+    - name: packages
+      value: "./outyet/"
+  workspaces:
+    - name: shared-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 500Mi
