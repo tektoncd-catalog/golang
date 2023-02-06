@@ -27,7 +27,7 @@ spec:
     description: golang version to use for builds
     default: "latest"
   - name: flags
-    description: flags to use for the test command
+    description: flags to use for the test command. Adding some random text to trigger tests
     default: -v
   - name: GOOS
     description: "running program's operating system target"
