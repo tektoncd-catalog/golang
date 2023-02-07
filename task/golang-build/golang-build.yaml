@@ -61,7 +61,7 @@ spec:
         cp -R "$(workspaces.source.path)"/* "$SRC_PATH"
         cd "$SRC_PATH" || exit
       fi
-      go build "$(params.flags)" "$(params.packages)"
+      go build $(params.flags) "$(params.packages)"
     env:
     - name: GOOS
       value: "$(params.GOOS)"
