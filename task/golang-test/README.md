@@ -2,10 +2,6 @@
 
 This task is a Golang task to test Go projects.
 
-## Install the task
-
-TODO
-
 ### Parameters
 
 * **package**: base package to build in
