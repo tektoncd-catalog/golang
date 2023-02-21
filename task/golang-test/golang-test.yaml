@@ -1,58 +1,67 @@
 apiVersion: tekton.dev/v1
 kind: Task
 metadata:
-  name: golang-test
-  labels:
-    app.kubernetes.io/version: "1.0.0"
   annotations:
-    tekton.dev/pipelines.minVersion: "0.12.1"
-    tekton.dev/categories: Testing
-    tekton.dev/tags: test
-    tekton.dev/displayName: "golang test"
-    tekton.dev/platforms: "linux/amd64,linux/s390x,linux/ppc64le"
     tekton.dev/catalog: tektoncd.golang
     tekton.dev/catalog-support-tier: verified
     tekton.dev/catalog-url: https://github.com/tektoncd-catalog/golang
+    tekton.dev/categories: Testing
+    tekton.dev/displayName: golang test
+    tekton.dev/pipelines.minVersion: 0.12.1
+    tekton.dev/platforms: linux/amd64,linux/s390x,linux/ppc64le
+    tekton.dev/signature: MEUCIE67H0hJ5o1jtKScgkXVAdZJWyLaSlM7yHDP19pl24O6AiEA0la1R3oc1k4G5dP0ukJS5gS2I+Djuak2OjVaUqFCnKI=
+    tekton.dev/tags: test
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/version: 1.0.0
+  name: golang-test
 spec:
-  description: >-
-    This Task is Golang task to test Go projects.
-
+  description: This Task is Golang task to test Go projects.
   params:
-  - name: package
-    description: package (and its children) under test
-  - name: packages
-    description: "packages to test (default: ./...)"
-    default: "./..."
-  - name: context
+  - description: package (and its children) under test
+    name: package
+  - default: ./...
+    description: 'packages to test (default: ./...)'
+    name: packages
+  - default: .
     description: path to the directory to use as context.
-    default: "."
-  - name: version
+    name: context
+  - default: latest
     description: golang version to use for tests
-    default: "latest"
-  - name: flags
+    name: version
+  - default: -race -cover -v
     description: flags to use for the test command
-    default: -race -cover -v
-  - name: GOOS
-    description: "running program's operating system target"
-    default: linux
-  - name: GOARCH
-    description: "running program's architecture target"
-    default: amd64
-  - name: GO111MODULE
-    description: "value of module support"
-    default: auto
-  - name: GOCACHE
-    description: "Go caching directory path"
-    default: ""
-  - name: GOMODCACHE
-    description: "Go mod caching directory path"
-    default: ""
-  workspaces:
-  - name: source
+    name: flags
+  - default: linux
+    description: running program's operating system target
+    name: GOOS
+  - default: amd64
+    description: running program's architecture target
+    name: GOARCH
+  - default: auto
+    description: value of module support
+    name: GO111MODULE
+  - default: ""
+    description: Go caching directory path
+    name: GOCACHE
+  - default: ""
+    description: Go mod caching directory path
+    name: GOMODCACHE
   steps:
-  - name: unit-test
+  - env:
+    - name: GOOS
+      value: $(params.GOOS)
+    - name: GOARCH
+      value: $(params.GOARCH)
+    - name: GO111MODULE
+      value: $(params.GO111MODULE)
+    - name: GOCACHE
+      value: $(params.GOCACHE)
+    - name: GOMODCACHE
+      value: $(params.GOMODCACHE)
     image: docker.io/library/golang:$(params.version)
-    workingDir: $(workspaces.source.path)
+    name: unit-test
+    resources: {}
     script: |
       if [ ! -e $GOPATH/src/$(params.package)/go.mod ];then
          SRC_PATH="$GOPATH/src/$(params.package)"
@@ -61,14 +70,6 @@ spec:
          cd $SRC_PATH
       fi
       go test $(params.flags) $(params.packages)
-    env:
-    - name: GOOS
-      value: "$(params.GOOS)"
-    - name: GOARCH
-      value: "$(params.GOARCH)"
-    - name: GO111MODULE
-      value: "$(params.GO111MODULE)"
-    - name: GOCACHE
-      value: "$(params.GOCACHE)"
-    - name: GOMODCACHE
-      value: "$(params.GOMODCACHE)"
+    workingDir: $(workspaces.source.path)
+  workspaces:
+  - name: source
