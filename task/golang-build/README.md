@@ -14,7 +14,7 @@ kubectl apply -f https://raw.githubusercontent.com/tektoncd-catalog/golang/main/
 |-----------|-------------|---------|
 | `package` | Base package to build in | _(required)_ |
 | `packages` | Packages to build | `./cmd/...` |
-| `version` | Golang version to use for builds | `latest` |
+| `version` | Golang version to use for builds | `1.26` |
 | `flags` | Flags to use for the build command | `-v` |
 | `GOOS` | Target operating system | `linux` |
 | `GOARCH` | Target architecture | `amd64` |

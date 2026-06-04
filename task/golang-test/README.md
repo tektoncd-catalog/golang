@@ -15,7 +15,7 @@ kubectl apply -f https://raw.githubusercontent.com/tektoncd-catalog/golang/main/
 | `package` | Base package under test | _(required)_ |
 | `packages` | Packages to test | `./...` |
 | `context` | Path to the directory to use as context | `.` |
-| `version` | Golang version to use for tests | `latest` |
+| `version` | Golang version to use for tests | `1.26` |
 | `flags` | Flags to use for the test command | `-race -cover -v` |
 | `GOOS` | Target operating system | `linux` |
 | `GOARCH` | Target architecture | `amd64` |
