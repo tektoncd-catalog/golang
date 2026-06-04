@@ -22,8 +22,24 @@ jobs:
       - name: Validate task YAMLs
         run: |
           for f in task/*/golang-*.yaml; do
-            echo "--- Validating ${f}"
-            kubectl apply --dry-run=client --validate=false -f "${f}"
+            echo -n "--- Validating ${f} ... "
+            # Check YAML is valid and has expected Tekton structure
+            apiVersion=$(yq '.apiVersion' "${f}")
+            kind=$(yq '.kind' "${f}")
+            name=$(yq '.metadata.name' "${f}")
+            if [[ "${apiVersion}" != "tekton.dev/v1" ]]; then
+              echo "FAIL: expected apiVersion tekton.dev/v1, got ${apiVersion}"
+              exit 1
+            fi
+            if [[ "${kind}" != "Task" ]]; then
+              echo "FAIL: expected kind Task, got ${kind}"
+              exit 1
+            fi
+            if [[ -z "${name}" || "${name}" == "null" ]]; then
+              echo "FAIL: metadata.name is missing"
+              exit 1
+            fi
+            echo "OK (${kind}/${name})"
           done
 
   e2e:
