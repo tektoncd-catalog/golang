@@ -1,8 +1,8 @@
-# Generated from base/golang-build.yaml — do not edit directly.
+# Generated from base/golang-test.yaml — do not edit directly.
 apiVersion: tekton.dev/v1
 kind: Task
 metadata:
-  name: golang-build
+  name: golang-test-alpine
   labels:
     app.kubernetes.io/version: 1.1.0
   annotations:
@@ -20,25 +20,28 @@ metadata:
     tekton.dev/catalog: tektoncd.golang
     tekton.dev/catalog-support-tier: verified
     tekton.dev/catalog-url: https://github.com/tektoncd-catalog/golang
-    tekton.dev/categories: Build Tools
-    tekton.dev/displayName: golang build
+    tekton.dev/categories: Testing
+    tekton.dev/displayName: golang test (alpine)
     tekton.dev/pipelines.minVersion: 1.0.0
     tekton.dev/platforms: linux/amd64,linux/s390x,linux/ppc64le,linux/arm64
-    tekton.dev/tags: build-tool
+    tekton.dev/tags: test
 spec:
-  description: This Task is Golang task to build Go projects.
+  description: This Task is Golang task to test Go projects. Uses the Alpine-based Go image for smaller footprint.
   params:
     - name: package
-      description: base package to build in
+      description: package (and its children) under test
     - name: packages
-      description: 'packages to build (default: ./cmd/...)'
-      default: ./cmd/...
+      description: 'packages to test (default: ./...)'
+      default: ./...
+    - name: context
+      description: path to the directory to use as context.
+      default: .
     - name: version
-      description: golang version to use for builds
+      description: golang version to use for tests
       default: "1.26"
     - name: flags
       description: flags to use for the test command
-      default: -v
+      default: -race -cover -v
     - name: GOOS
       description: running program's operating system target
       default: linux
@@ -54,17 +57,11 @@ spec:
     - name: GOMODCACHE
       description: Go mod caching directory path
       default: ""
-    - name: CGO_ENABLED
-      description: Toggle cgo tool during Go build. Use value '0' to disable cgo (for static builds).
-      default: ""
-    - name: GOSUMDB
-      description: Go checksum database url. Use value 'off' to disable checksum validation.
-      default: ""
   workspaces:
     - name: source
   steps:
-    - name: build
-      image: docker.io/library/golang:$(params.version)
+    - name: unit-test
+      image: docker.io/library/golang:$(params.version)-alpine
       workingDir: $(workspaces.source.path)
       env:
         - name: GOOS
@@ -77,15 +74,11 @@ spec:
           value: $(params.GOCACHE)
         - name: GOMODCACHE
           value: $(params.GOMODCACHE)
-        - name: CGO_ENABLED
-          value: $(params.CGO_ENABLED)
-        - name: GOSUMDB
-          value: $(params.GOSUMDB)
       script: |
         if [ ! -e $GOPATH/src/$(params.package)/go.mod ];then
-          SRC_PATH="$GOPATH/src/$(params.package)"
-          mkdir -p $SRC_PATH
-          cp -R "$(workspaces.source.path)"/* $SRC_PATH
-          cd $SRC_PATH
+           SRC_PATH="$GOPATH/src/$(params.package)"
+           mkdir -p $SRC_PATH
+           cp -R "$(workspaces.source.path)/$(params.context)"/* $SRC_PATH
+           cd $SRC_PATH
         fi
-        go build $(params.flags) $(params.packages)
+        go test $(params.flags) $(params.packages)
