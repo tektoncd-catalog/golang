@@ -20,6 +20,9 @@
 #   ./hack/release.sh v1.2.0              # bump, commit, tag, push
 #   ./hack/release.sh v1.2.0 --dry-run    # show what would change
 #   ./hack/release.sh v1.2.0 --llm        # generate changelog with gh copilot
+#
+# Environment variables:
+#   SIGNING_KEY  - Path to ECDSA private key for signing tasks (default: keys/signing-key.pem)
 
 set -euo pipefail
 
@@ -30,6 +33,7 @@ ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 VERSION=""
 DRY_RUN=false
 USE_LLM=false
+SIGNING_KEY="${SIGNING_KEY:-${ROOT_DIR}/keys/signing-key.pem}"
 
 for arg in "$@"; do
     case "${arg}" in
@@ -43,6 +47,20 @@ done
 if [[ -z "${VERSION}" ]]; then
     echo "Usage: $0 <version> [--dry-run] [--llm]"
     echo "  Example: $0 v1.2.0"
+    exit 1
+fi
+
+# Check signing key
+if [[ ! -f "${SIGNING_KEY}" ]]; then
+    echo "Error: signing key not found at ${SIGNING_KEY}"
+    echo "  Set SIGNING_KEY env var or place key at keys/signing-key.pem"
+    echo "  Generate with: openssl ecparam -genkey -name prime256v1 -noout -out keys/signing-key.pem"
+    exit 1
+fi
+
+# Check tkn CLI
+if ! command -v tkn &>/dev/null; then
+    echo "Error: tkn CLI not found. Install from https://tekton.dev/docs/cli/"
     exit 1
 fi
 
@@ -229,6 +247,13 @@ for f in "${ALL_FILES[@]}"; do
     else
         apply_version_bumps "${f}" > "${f}.tmp" && mv "${f}.tmp" "${f}"
     fi
+done
+
+# --- Sign task YAMLs ---
+echo "--- Signing task YAMLs with ${SIGNING_KEY}..."
+for f in "${TASK_FILES[@]}"; do
+    echo "  Signing ${f}"
+    tkn task sign "${f}" -K="${SIGNING_KEY}" -f="${f}"
 done
 
 echo "--- Committing..."
