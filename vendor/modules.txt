@@ -1,3 +1,0 @@
-# github.com/tektoncd/plumbing v0.0.0-20230131153607-bdfa61b099a8
-## explicit; go 1.13
-github.com/tektoncd/plumbing/scripts
