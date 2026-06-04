@@ -1,4 +1,4 @@
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
   name: golang-test-pipeline
@@ -9,29 +9,23 @@ spec:
     - name: url
       description: Repository URL to clone from
     - name: package
-      description: base package to build in
+      description: base package under test
     - name: packages
-      description: packages to build
+      description: packages to test
+      default: "./..."
     - name: flags
-      description: flags to use for the build command
+      description: flags to use for the test command
       default: -v
   tasks:
-    - name: fetch-repository  # TODO: use git-clone verified catalog once git-clone is migrated
+    - name: fetch-repository
       taskRef:
-        resolver: hub
-        params:
-        - name: name
-          value: git-clone
-        - name: version 
-          value: 0.7
+        name: git-clone
       workspaces:
         - name: output
           workspace: shared-workspace
       params:
         - name: url
           value: $(params.url)
-        - name: subdirectory
-          value: ""
         - name: deleteExisting
           value: "true"
     - name: run-test

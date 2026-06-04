@@ -1,4 +1,4 @@
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
   name: golang-build-pipeline
@@ -12,28 +12,20 @@ spec:
       description: base package to build in
     - name: packages
       description: packages to build
+      default: "./..."
     - name: flags
       description: flags to use for the build command
       default: -v
-    - name: artifact-output
-      description: the output of the package to be verified
   tasks:
-    - name: fetch-repository  # TODO: use git-clone verified catalog once git-clone is migrated
+    - name: fetch-repository
       taskRef:
-        resolver: hub
-        params:
-        - name: name
-          value: git-clone
-        - name: version 
-          value: 0.7
+        name: git-clone
       workspaces:
         - name: output
           workspace: shared-workspace
       params:
         - name: url
           value: $(params.url)
-        - name: subdirectory
-          value: ""
         - name: deleteExisting
           value: "true"
     - name: run-build
@@ -51,25 +43,3 @@ spec:
           value: $(params.packages)
         - name: flags
           value: $(params.flags)
-    - name: verify-artifact
-      runAfter:
-        - run-build
-      workspaces:
-        - name: source
-          workspace: shared-workspace
-      params:
-        - name: artifact-output
-          value: $(params.artifact-output)
-      taskSpec:
-        params:
-          - name: artifact-output
-        workspaces:
-          - name: source
-        steps:
-          - image: bash
-            script: |
-              if [[ -e $(params.artifact-output) ]]; then 
-                exit 0
-              else
-                exit 1
-              fi

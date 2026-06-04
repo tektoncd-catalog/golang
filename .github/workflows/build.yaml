@@ -1,0 +1,111 @@
+name: Build
+
+on:
+  pull_request:
+    branches: ['main']
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 0 * * *'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Validate task YAMLs
+        run: |
+          for f in task/*/golang-*.yaml; do
+            echo "--- Validating ${f}"
+            kubectl apply --dry-run=client -f "${f}"
+          done
+
+  e2e:
+    name: E2E (${{ matrix.pipeline-version }})
+    needs: [lint]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # All supported Tekton Pipelines LTS versions
+        # Update quarterly when new LTS is released
+        pipeline-version:
+          - v1.12.0  # LTS, EOL 2027-05-04
+          - v1.9.3   # LTS, EOL 2027-01-30
+          - v1.6.2   # LTS, EOL 2026-10-31
+          - v1.3.4   # LTS, EOL 2026-08-04
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Create Kind cluster
+        uses: helm/kind-action@a1b0e391336a6ee6713a0583f8c6240d70863de3 # v1.12.0
+        with:
+          cluster_name: kind
+          wait: 120s
+
+      - name: Run e2e tests
+        env:
+          PIPELINE_VERSION: ${{ matrix.pipeline-version }}
+          TIMEOUT: 300s
+        run: ./test/e2e-tests.sh
+
+  e2e-bundle:
+    name: E2E Bundle
+    needs: [lint]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - uses: tektoncd/actions/setup-tektoncd-cli@dd92514472167b361de1c95fd31fc2ef83c282ec # main
+
+      - name: Create Kind cluster
+        uses: helm/kind-action@a1b0e391336a6ee6713a0583f8c6240d70863de3 # v1.12.0
+        with:
+          cluster_name: kind
+          wait: 120s
+
+      - name: Run bundle e2e test
+        env:
+          PIPELINE_VERSION: v1.12.0
+          TIMEOUT: 300s
+        run: ./test/e2e-bundle-test.sh
+
+  ci-summary:
+    name: CI summary
+    needs: [lint, e2e, e2e-bundle]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check CI results
+        run: |
+          results=(
+            "lint=${NEEDS_LINT_RESULT}"
+            "e2e=${NEEDS_E2E_RESULT}"
+            "e2e-bundle=${NEEDS_E2E_BUNDLE_RESULT}"
+          )
+          failed=0
+          for r in "${results[@]}"; do
+            name="${r%%=*}"
+            result="${r#*=}"
+            echo "${name}: ${result}"
+            if [ "$result" != "success" ] && [ "$result" != "skipped" ]; then
+              failed=1
+            fi
+          done
+          if [ "$failed" -eq 1 ]; then
+            echo ""
+            echo "Some CI jobs failed or were cancelled"
+            exit 1
+          fi
+          echo ""
+          echo "All CI checks passed"
+        env:
+          NEEDS_LINT_RESULT: ${{ needs.lint.result }}
+          NEEDS_E2E_RESULT: ${{ needs.e2e.result }}
+          NEEDS_E2E_BUNDLE_RESULT: ${{ needs.e2e-bundle.result }}
