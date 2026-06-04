@@ -1,0 +1,7 @@
+variants:
+  - suffix: ""
+    image: "docker.io/library/golang:$(params.version)"
+    description_suffix: ""
+  - suffix: "-alpine"
+    image: "docker.io/library/golang:$(params.version)-alpine"
+    description_suffix: " Uses the Alpine-based Go image for smaller footprint."
