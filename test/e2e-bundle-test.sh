@@ -43,7 +43,7 @@ kubectl wait --for=condition=available --timeout=120s deployment/tekton-pipeline
 kubectl wait --for=condition=available --timeout=120s deployment/tekton-pipelines-webhook -n tekton-pipelines
 
 echo "--- Installing git-clone task"
-kubectl apply -f "https://raw.githubusercontent.com/tektoncd-catalog/git-clone/main/task/git-clone/git-clone.yaml"
+kubectl apply -f "https://raw.githubusercontent.com/tektoncd-catalog/git-clone/v1.4.0/task/git-clone/git-clone.yaml"
 
 echo "--- Pushing Tekton Bundles"
 echo "    golang-build -> ${BUILD_BUNDLE_REF}"
