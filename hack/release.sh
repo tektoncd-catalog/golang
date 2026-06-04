@@ -75,11 +75,12 @@ BARE_VERSION="${VERSION#v}"
 
 cd "${ROOT_DIR}"
 
-# --- Task files to update ---
-TASK_FILES=(
-    "task/golang-build/golang-build.yaml"
-    "task/golang-test/golang-test.yaml"
-)
+# --- Task files to update (discover all golang-* tasks) ---
+TASK_FILES=()
+for taskdir in "${ROOT_DIR}"/task/golang-*; do
+    task=$(basename "${taskdir}")
+    TASK_FILES+=("task/${task}/${task}.yaml")
+done
 
 # --- Detect current version from first task ---
 CURRENT_VERSION=$(grep 'app.kubernetes.io/version' "${TASK_FILES[0]}" | head -1 | sed 's/.*"\(.*\)"/\1/')
@@ -111,6 +112,10 @@ if [[ "${DRY_RUN}" != true ]]; then
 else
     git fetch origin main 2>/dev/null || true
 fi
+
+# --- Ensure generated files are up to date ---
+echo "--- Running hack/generate.sh to sync generated task files..."
+"${SCRIPT_DIR}/generate.sh"
 
 # --- Generate changelog ---
 echo "--- Commits since ${CURRENT_TAG}:"

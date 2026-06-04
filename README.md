@@ -7,9 +7,33 @@ This repository contains verified Tekton Tasks for building and testing Go proje
 ## Tasks
 
 | Task | Description | Default Go version |
-|------|-------------|--------------------|
+|--------------------|-------------|--------------------|
 | [`golang-build`](task/golang-build/) | Build Go packages | 1.26 |
+| [`golang-build-alpine`](task/golang-build-alpine/) | Build Go packages (Alpine) | 1.26 |
 | [`golang-test`](task/golang-test/) | Run Go tests | 1.26 |
+| [`golang-test-alpine`](task/golang-test-alpine/) | Run Go tests (Alpine) | 1.26 |
+
+
+## Variants
+
+Each task is available in two variants:
+
+| Task | Variant | Image |
+|------|---------|-------|
+| `golang-build` | Debian (default) | `golang:1.26` |
+| `golang-build-alpine` | Alpine | `golang:1.26-alpine` |
+| `golang-test` | Debian (default) | `golang:1.26` |
+| `golang-test-alpine` | Alpine | `golang:1.26-alpine` |
+
+The **Debian** variant is the default and is recommended for most use cases.
+The **Alpine** variant produces a smaller footprint and is opt-in.
+
+To install an Alpine variant:
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/tektoncd-catalog/golang/main/task/golang-build-alpine/golang-build-alpine.yaml
+kubectl apply -f https://raw.githubusercontent.com/tektoncd-catalog/golang/main/task/golang-test-alpine/golang-test-alpine.yaml
+```
 
 ## Installation
 
