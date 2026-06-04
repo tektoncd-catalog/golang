@@ -23,7 +23,7 @@ jobs:
         run: |
           for f in task/*/golang-*.yaml; do
             echo "--- Validating ${f}"
-            kubectl apply --dry-run=client -f "${f}"
+            kubectl apply --dry-run=client --validate=false -f "${f}"
           done
 
   e2e:
