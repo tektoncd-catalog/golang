@@ -14,8 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# E2e test runner for golang-build and golang-test tasks.
-# Installs the tasks, runs test PipelineRuns, and waits for completion.
+# E2e test runner for Alpine variants of golang-build and golang-test tasks.
+# Installs the Alpine tasks, runs test PipelineRuns, and waits for completion.
 #
 # Environment variables:
 #   PIPELINE_VERSION  - Tekton Pipelines version to install (default: v1.12.0)
@@ -37,14 +37,12 @@ kubectl wait --for=condition=available --timeout=120s deployment/tekton-pipeline
 echo "--- Installing git-clone task"
 kubectl apply -f "https://raw.githubusercontent.com/tektoncd-catalog/git-clone/v1.6.0/task/git-clone/git-clone.yaml"
 
-echo "--- Installing golang tasks"
-kubectl apply -f "${ROOT_DIR}/task/golang-build/golang-build.yaml"
-kubectl apply -f "${ROOT_DIR}/task/golang-test/golang-test.yaml"
+echo "--- Installing Alpine golang tasks"
+kubectl apply -f "${ROOT_DIR}/task/golang-build-alpine/golang-build-alpine.yaml"
+kubectl apply -f "${ROOT_DIR}/task/golang-test-alpine/golang-test-alpine.yaml"
 
 echo "--- Creating test Pipelines and PipelineRuns"
-for taskdir in "${ROOT_DIR}"/task/golang-*/tests; do
-    # Skip alpine variants — those are tested by e2e-tests-alpine.sh
-    [[ "${taskdir}" == *-alpine* ]] && continue
+for taskdir in "${ROOT_DIR}/task/golang-build-alpine/tests" "${ROOT_DIR}/task/golang-test-alpine/tests"; do
     for f in "${taskdir}"/*.yaml; do
         echo "    Applying ${f}"
         kubectl apply -f "${f}"

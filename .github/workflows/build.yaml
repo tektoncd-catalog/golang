@@ -71,6 +71,25 @@ jobs:
           TIMEOUT: 300s
         run: ./test/e2e-tests.sh
 
+  e2e-alpine:
+    name: E2E Alpine (latest LTS)
+    needs: [lint]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Create Kind cluster
+        uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc # v1.14.0
+        with:
+          cluster_name: kind
+          wait: 120s
+
+      - name: Run Alpine e2e tests
+        env:
+          PIPELINE_VERSION: v1.12.0
+          TIMEOUT: 300s
+        run: ./test/e2e-tests-alpine.sh
+
   e2e-bundle:
     name: E2E Bundle
     needs: [lint]
@@ -94,7 +113,7 @@ jobs:
 
   ci-summary:
     name: CI summary
-    needs: [lint, e2e, e2e-bundle]
+    needs: [lint, e2e, e2e-alpine, e2e-bundle]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -103,6 +122,7 @@ jobs:
           results=(
             "lint=${NEEDS_LINT_RESULT}"
             "e2e=${NEEDS_E2E_RESULT}"
+            "e2e-alpine=${NEEDS_E2E_ALPINE_RESULT}"
             "e2e-bundle=${NEEDS_E2E_BUNDLE_RESULT}"
           )
           failed=0
@@ -124,4 +144,5 @@ jobs:
         env:
           NEEDS_LINT_RESULT: ${{ needs.lint.result }}
           NEEDS_E2E_RESULT: ${{ needs.e2e.result }}
+          NEEDS_E2E_ALPINE_RESULT: ${{ needs.e2e-alpine.result }}
           NEEDS_E2E_BUNDLE_RESULT: ${{ needs.e2e-bundle.result }}

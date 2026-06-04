@@ -1,0 +1,45 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: golang-test-alpine-pipeline
+spec:
+  workspaces:
+    - name: shared-workspace
+  params:
+    - name: url
+      description: Repository URL to clone from
+    - name: package
+      description: base package under test
+    - name: packages
+      description: packages to test
+      default: "./..."
+    - name: flags
+      description: flags to use for the test command
+      default: -v
+  tasks:
+    - name: fetch-repository
+      taskRef:
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+      params:
+        - name: url
+          value: $(params.url)
+        - name: deleteExisting
+          value: "true"
+    - name: run-test
+      taskRef:
+        name: golang-test-alpine
+      runAfter:
+        - fetch-repository
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+      params:
+        - name: package
+          value: $(params.package)
+        - name: packages
+          value: $(params.packages)
+        - name: flags
+          value: $(params.flags)

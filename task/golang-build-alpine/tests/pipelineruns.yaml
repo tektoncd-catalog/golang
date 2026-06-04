@@ -1,0 +1,23 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: golang-build-alpine-run-uuid
+spec:
+  pipelineRef:
+    name: golang-build-alpine-pipeline
+  params:
+    - name: url
+      value: https://github.com/google/uuid
+    - name: package
+      value: github.com/google/uuid
+    - name: packages
+      value: "./..."
+  workspaces:
+    - name: shared-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 256Mi
