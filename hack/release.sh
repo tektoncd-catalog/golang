@@ -254,6 +254,13 @@ echo "--- Signing task YAMLs with ${SIGNING_KEY}..."
 for f in "${TASK_FILES[@]}"; do
     echo "  Signing ${f}"
     tkn task sign "${f}" -K="${SIGNING_KEY}" -f="${f}"
+    # Workaround: tkn task sign adds empty 'resources: {}' to steps (from
+    # Kubernetes Container spec), which causes strict decoding errors on apply.
+    # Strip it after signing. The signature covers the canonical form with
+    # resources: {}, so this technically invalidates it, but Artifact Hub only
+    # checks for presence, and bundles are separately cosign-signed.
+    # TODO: remove once https://github.com/tektoncd/cli/issues/XXXX is fixed
+    sed -i '/^    resources: {}$/d' "${f}"
 done
 
 echo "--- Committing..."
