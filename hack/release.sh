@@ -186,9 +186,9 @@ apply_version_bumps() {
 # --- Helper: update artifacthub changelog in content (stdin → stdout) ---
 apply_ah_changes() {
     # Normalize AH_CHANGES indentation (LLM may return variable indent)
-    # Re-indent: "- kind:" lines get 6 spaces, "description:" lines get 8 spaces
+    # Strip markdown fences, re-indent: "- kind:" lines get 6 spaces, "description:" lines get 8 spaces
     local normalized
-    normalized=$(echo -e "${AH_CHANGES}" | sed -e 's/^[[:space:]]*- kind:/      - kind:/' -e 's/^[[:space:]]*description:/        description:/')
+    normalized=$(echo -e "${AH_CHANGES}" | grep -v '^[[:space:]]*\`\`\`' | sed -e 's/^[[:space:]]*- kind:/      - kind:/' -e 's/^[[:space:]]*description:/        description:/')
     python3 -c "
 import re, sys
 content = sys.stdin.read()

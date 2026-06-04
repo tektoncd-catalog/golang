@@ -45,7 +45,6 @@ metadata:
         description: Normalized AH_CHANGES indentation handling in release script output.
       - kind: removed
         description: Removed go.mod, vendored dependencies, legacy test scripts, and outdated README install section.
-```
 spec:
   description: >-
     This Task is Golang task to test Go projects.
