@@ -1,38 +1,45 @@
 # Golang Build
 
-This Task is Golang task to build Go projects.
+This Task builds Go packages.
 
-### Parameters
+## Installation
 
-* **package**: base package under test
-* **packages**: packages to test (_default:_ ./...)
-* **version**: golang version to use for tests (_default:_ latest)
-* **flags**: flags to use for `go build` command (_default:_ -v)
-* **GOOS**: operating system target (_default:_ linux)
-* **GOARCH**: architecture target (_default:_ amd64)
-* **GO111MODULE**: value of module support (_default:_ auto)
-* **GOCACHE**: value for go caching path (_default:_ "")
-* **GOMODCACHE**: value for go module caching path (_default:_ "")
-* **CGO_ENABLED**: value for go cgo tool toggle (_default:_ "")
-* **GOSUMDB**: value for go checksum database url (_default:_ "")
+```bash
+kubectl apply -f https://raw.githubusercontent.com/tektoncd-catalog/golang/main/task/golang-build/golang-build.yaml
+```
 
-### Workspaces
+## Parameters
 
-* **source**: A [Workspace](https://github.com/tektoncd/pipeline/blob/main/docs/workspaces.md) containing the source to build.
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `package` | Base package to build in | _(required)_ |
+| `packages` | Packages to build | `./cmd/...` |
+| `version` | Golang version to use for builds | `latest` |
+| `flags` | Flags to use for the build command | `-v` |
+| `GOOS` | Target operating system | `linux` |
+| `GOARCH` | Target architecture | `amd64` |
+| `GO111MODULE` | Value of module support | `auto` |
+| `GOCACHE` | Go caching directory path | `""` |
+| `GOMODCACHE` | Go mod caching directory path | `""` |
+| `CGO_ENABLED` | Toggle cgo tool during build. Use `0` to disable (for static builds). | `""` |
+| `GOSUMDB` | Go checksum database URL. Use `off` to disable checksum validation. | `""` |
 
-### Platforms
+## Workspaces
 
-The Task can be run on `linux/amd64`, `linux/s390x`,  and `linux/ppc64le` platforms.
+| Workspace | Description | Optional |
+|-----------|-------------|----------|
+| `source` | The Go source code to build | No |
 
-Specify value for `GOARCH` parameter according to the desired target architecture.
+## Platforms
+
+The Task can be run on `linux/amd64`, `linux/s390x`, and `linux/ppc64le` platforms.
+
+Set the `GOARCH` parameter according to the desired target architecture.
 
 ## Usage
 
-This TaskRun runs the Task to compile commands from
-[`tektoncd/pipeline`](https://github.com/tektoncd/pipeline).
-
 ```yaml
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: TaskRun
 metadata:
   name: build-my-code
@@ -40,10 +47,33 @@ spec:
   taskRef:
     name: golang-build
   workspaces:
-  - name: source
-    persistentVolumeClaim:
-      claimName: my-source
+    - name: source
+      persistentVolumeClaim:
+        claimName: my-source
   params:
-  - name: package
-    value: github.com/tektoncd/pipeline
+    - name: package
+      value: github.com/tektoncd/pipeline
+```
+
+### Static binary build
+
+```yaml
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: build-static-binary
+spec:
+  taskRef:
+    name: golang-build
+  workspaces:
+    - name: source
+      persistentVolumeClaim:
+        claimName: my-source
+  params:
+    - name: package
+      value: github.com/my-org/my-project
+    - name: flags
+      value: -v -ldflags="-s -w"
+    - name: CGO_ENABLED
+      value: "0"
 ```

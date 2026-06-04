@@ -1,38 +1,46 @@
 # Golang Test
 
-This task is a Golang task to test Go projects.
+This Task runs Go tests.
 
-### Parameters
+## Installation
 
-* **package**: base package to build in
-* **packages**: packages to test (_default:_ ./cmd/...)
-* **context**: path to the directory to use as context (default: .)
-* **version**: golang version to use for builds (_default:_ latest)
-* **flags**: flags to use for `go test` command (_default:_ -race -cover -v)
-* **GOOS**: operating system target (_default:_ linux)
-* **GOARCH**: architecture target (_default:_ amd64)
-* **GO111MODULE**: value of module support (_default:_ auto)
-* **GOCACHE**: value for go caching path (_default:_ "")
-* **GOMODCACHE**: value for go module caching path (_default:_ "")
+```bash
+kubectl apply -f https://raw.githubusercontent.com/tektoncd-catalog/golang/main/task/golang-test/golang-test.yaml
+```
 
-### Workspaces
+## Parameters
 
-* **source**: A [Workspace](https://github.com/tektoncd/pipeline/blob/main/docs/workspaces.md) containing the source to build.
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `package` | Base package under test | _(required)_ |
+| `packages` | Packages to test | `./...` |
+| `context` | Path to the directory to use as context | `.` |
+| `version` | Golang version to use for tests | `latest` |
+| `flags` | Flags to use for the test command | `-race -cover -v` |
+| `GOOS` | Target operating system | `linux` |
+| `GOARCH` | Target architecture | `amd64` |
+| `GO111MODULE` | Value of module support | `auto` |
+| `GOCACHE` | Go caching directory path | `""` |
+| `GOMODCACHE` | Go mod caching directory path | `""` |
+
+## Workspaces
+
+| Workspace | Description | Optional |
+|-----------|-------------|----------|
+| `source` | The Go source code to test | No |
 
 ## Platforms
 
-The Task can be run on `linux/amd64`, `linux/s390x` and `linux/ppc64le` platforms.
+The Task can be run on `linux/amd64`, `linux/s390x`, and `linux/ppc64le` platforms.
 
-Specify value for `GOARCH` parameter according to the desired target architecture.
-Do not use `-race` flag in `flags` parameter for `linux/s390x` platform.
+Set the `GOARCH` parameter according to the desired target architecture.
+
+> **Note**: Do not use the `-race` flag on `linux/s390x` — it is not supported on that platform.
 
 ## Usage
 
-This TaskRun runs the Task to run unit-tests on
-[`tektoncd/pipeline`](https://github.com/tektoncd/pipeline).
-
 ```yaml
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: TaskRun
 metadata:
   name: test-my-code
@@ -40,12 +48,33 @@ spec:
   taskRef:
     name: golang-test
   workspaces:
-  - name: source
-    persistentVolumeClaim:
-      claimName: my-source
+    - name: source
+      persistentVolumeClaim:
+        claimName: my-source
   params:
-  - name: package
-    value: github.com/tektoncd/pipeline
-  - name: packages
-    value: ./pkg/...
+    - name: package
+      value: github.com/tektoncd/pipeline
+```
+
+### Test specific packages
+
+```yaml
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: test-specific-packages
+spec:
+  taskRef:
+    name: golang-test
+  workspaces:
+    - name: source
+      persistentVolumeClaim:
+        claimName: my-source
+  params:
+    - name: package
+      value: github.com/tektoncd/pipeline
+    - name: packages
+      value: ./pkg/reconciler/...
+    - name: flags
+      value: -race -cover -v -count=1
 ```
