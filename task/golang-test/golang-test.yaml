@@ -25,12 +25,27 @@ metadata:
       - name: support
         url: https://github.com/tektoncd-catalog/golang/issues
     artifacthub.io/changes: |
+      - kind: added
+        description: Added release automation script for generating and publishing releases.
+      - kind: added
+        description: Added CI workflows for e2e testing, bundle publish, and release.
+      - kind: added
+        description: Added Artifact Hub repository metadata for verified publisher status.
+      - kind: added
+        description: Added golang test scripts and catalog test cases.
       - kind: changed
-        description: Pin default Go version to 1.26 for reproducible builds
-      - kind: added
-        description: Artifact Hub listing with verified publisher metadata
-      - kind: added
-        description: linux/arm64 platform support
+        description: Migrated golang-build and golang-test resources and bumped catalog API to v1.
+      - kind: changed
+        description: Pinned task runtime to Go 1.26 and added Artifact Hub metadata for v1.1.0.
+      - kind: changed
+        description: Raised Tekton Pipelines minimum supported version to 1.0.0.
+      - kind: fixed
+        description: Fixed lint and YAML validation flow (dry-run validation flags and yq-based checks).
+      - kind: fixed
+        description: Normalized AH_CHANGES indentation handling in release script output.
+      - kind: removed
+        description: Removed go.mod, vendored dependencies, legacy test scripts, and outdated README install section.
+```
 spec:
   description: >-
     This Task is Golang task to test Go projects.
