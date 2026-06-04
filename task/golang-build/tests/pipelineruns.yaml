@@ -1,21 +1,17 @@
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
-  name: golang-build-pipeline-run-rest-api-test
+  name: golang-build-run-uuid
 spec:
   pipelineRef:
     name: golang-build-pipeline
   params:
     - name: url
-      value: https://github.com/chmouel/go-rest-api-test
+      value: https://github.com/google/uuid
     - name: package
-      value: github.com/chmouel/go-rest-api-test
+      value: github.com/google/uuid
     - name: packages
-      value: "./"
-    - name: artifact-output
-      value: /workspace/source/api_test
-    - name: flags
-      value: -o /workspace/source/api_test
+      value: "./..."
   workspaces:
     - name: shared-workspace
       volumeClaimTemplate:
@@ -24,33 +20,4 @@ spec:
             - ReadWriteOnce
           resources:
             requests:
-              storage: 500Mi
-
----
-apiVersion: tekton.dev/v1beta1
-kind: PipelineRun
-metadata:
-  name: golang-build-pipeline-run-hello-example
-spec:
-  pipelineRef:
-    name: golang-build-pipeline
-  params:
-    - name: url
-      value: https://github.com/golang/example
-    - name: package
-      value: golang.org/x/example
-    - name: packages
-      value: "./hello/"
-    - name: artifact-output
-      value: /workspace/source/hello_pkg
-    - name: flags
-      value: -o /workspace/source/hello_pkg
-  workspaces:
-    - name: shared-workspace
-      volumeClaimTemplate:
-        spec:
-          accessModes:
-            - ReadWriteOnce
-          resources:
-            requests:
-              storage: 500Mi
+              storage: 256Mi
