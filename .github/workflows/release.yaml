@@ -34,12 +34,13 @@ jobs:
           GIT_TAG: ${{ steps.tag.outputs.tag_name }}
           REGISTRY: "ghcr.io/${{ github.repository }}"
         run: |
-          for task in golang-build golang-test; do
+          for taskdir in task/golang-*; do
+            task=$(basename "${taskdir}")
             echo "--- Publishing bundle for ${task}"
             tkn bundle push "${REGISTRY}/${task}:${GIT_TAG}" \
-              -f "task/${task}/${task}.yaml"
+              -f "${taskdir}/${task}.yaml"
             tkn bundle push "${REGISTRY}/${task}:latest" \
-              -f "task/${task}/${task}.yaml"
+              -f "${taskdir}/${task}.yaml"
           done
 
       - name: Sign Tekton Bundles
@@ -48,7 +49,8 @@ jobs:
           GIT_TAG: ${{ steps.tag.outputs.tag_name }}
           REGISTRY: "ghcr.io/${{ github.repository }}"
         run: |
-          for task in golang-build golang-test; do
+          for taskdir in task/golang-*; do
+            task=$(basename "${taskdir}")
             echo "--- Signing bundle for ${task}"
             digest=$(crane digest "${REGISTRY}/${task}:${GIT_TAG}")
             cosign sign --yes \
@@ -63,13 +65,21 @@ jobs:
           GIT_TAG: ${{ steps.tag.outputs.tag_name }}
           REGISTRY: "ghcr.io/${{ github.repository }}"
         run: |
+          # Build dynamic install snippet and bundle image list
+          INSTALL_LINES=""
+          BUNDLE_LINES=""
+          for taskdir in task/golang-*; do
+            task=$(basename "${taskdir}")
+            INSTALL_LINES+="          kubectl apply -f https://raw.githubusercontent.com/${{ github.repository }}/${GIT_TAG}/${taskdir}/${task}.yaml\n"
+            BUNDLE_LINES+="          - \`${REGISTRY}/${task}:${GIT_TAG}\`\n"
+          done
+
           cat <<EOF > release-notes.md
           ## Tekton Bundles
 
           Install tasks directly:
           \`\`\`bash
-          kubectl apply -f https://raw.githubusercontent.com/${{ github.repository }}/${GIT_TAG}/task/golang-build/golang-build.yaml
-          kubectl apply -f https://raw.githubusercontent.com/${{ github.repository }}/${GIT_TAG}/task/golang-test/golang-test.yaml
+$(printf '%b' "${INSTALL_LINES}")
           \`\`\`
 
           Or use via bundle resolver:
@@ -86,9 +96,7 @@ jobs:
           \`\`\`
 
           ### Bundle images
-          - \`${REGISTRY}/golang-build:${GIT_TAG}\`
-          - \`${REGISTRY}/golang-test:${GIT_TAG}\`
-
+$(printf '%b' "${BUNDLE_LINES}")
           All bundles are signed with [cosign](https://github.com/sigstore/cosign).
           EOF
 
