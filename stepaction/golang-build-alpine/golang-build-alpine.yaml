@@ -41,7 +41,7 @@ spec:
     description: golang version to use for builds
     default: "1.26"
   - name: flags
-    description: flags to use for the test command
+    description: flags to use for the build command
     default: -v
   - name: GOOS
     description: running program's operating system target

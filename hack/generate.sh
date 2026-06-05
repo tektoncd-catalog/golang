@@ -113,7 +113,7 @@ for t in $(seq 0 $((TOOL_COUNT - 1))); do
   for i in $(seq 0 $((VARIANT_COUNT - 1))); do
     suffix="$(yq ".variants[${i}].suffix" "${MANIFEST}")"
     image="$(yq ".variants[${i}].image" "${MANIFEST}")"
-    description_suffix="$(yq ".variants[${i}].description_suffix" "${MANIFEST}")"
+    description_suffix="$(yq ".variants[${i}].description_suffix // \"\"" "${MANIFEST}")"
 
     obj_name="${name}${suffix}"
 
