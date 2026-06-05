@@ -43,6 +43,12 @@ spec:
             params:
               - name: source-path
                 value: $(workspaces.source.path)
+          - name: goimports
+            ref:
+              name: golang-goimports
+            params:
+              - name: source-path
+                value: $(workspaces.source.path)
           - name: vet
             ref:
               name: golang-vet
