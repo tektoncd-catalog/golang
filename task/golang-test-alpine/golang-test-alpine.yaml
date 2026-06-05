@@ -1,6 +1,8 @@
+# Generated from base/golang-test.yaml — do not edit directly.
 apiVersion: tekton.dev/v1
 kind: Task
 metadata:
+  name: golang-test-alpine
   annotations:
     artifacthub.io/category: integration-delivery
     artifacthub.io/license: Apache-2.0
@@ -20,66 +22,63 @@ metadata:
     tekton.dev/displayName: golang test (alpine)
     tekton.dev/pipelines.minVersion: 1.0.0
     tekton.dev/platforms: linux/amd64,linux/s390x,linux/ppc64le,linux/arm64
-    tekton.dev/signature: MEYCIQDLFX2EeoduN7AK2ibP6tlC7ougPKFiELmt1As3cUnE/AIhAJHZxAMxccTxxRgkQGxCGn/CPG+tRKvRVF64mV9Nisym
     tekton.dev/tags: test
   labels:
     app.kubernetes.io/version: 1.2.0
-  name: golang-test-alpine
 spec:
-  description: This Task is Golang task to test Go projects. Uses the Alpine-based
-    Go image for smaller footprint.
+  description: This Task is Golang task to test Go projects. Uses the Alpine-based Go image for smaller footprint.
   params:
-  - description: package (and its children) under test
-    name: package
-  - default: ./...
-    description: 'packages to test (default: ./...)'
-    name: packages
-  - default: .
-    description: path to the directory to use as context.
-    name: context
-  - default: "1.26"
-    description: golang version to use for tests
-    name: version
-  - default: -race -cover -v
-    description: flags to use for the test command
-    name: flags
-  - default: linux
-    description: running program's operating system target
-    name: GOOS
-  - default: amd64
-    description: running program's architecture target
-    name: GOARCH
-  - default: auto
-    description: value of module support
-    name: GO111MODULE
-  - default: ""
-    description: Go caching directory path
-    name: GOCACHE
-  - default: ""
-    description: Go mod caching directory path
-    name: GOMODCACHE
-  steps:
-  - env:
+    - name: package
+      description: package (and its children) under test
+    - name: packages
+      description: 'packages to test (default: ./...)'
+      default: ./...
+    - name: context
+      description: path to the directory to use as context.
+      default: .
+    - name: version
+      description: golang version to use for tests
+      default: "1.26"
+    - name: flags
+      description: flags to use for the test command
+      default: -race -cover -v
     - name: GOOS
-      value: $(params.GOOS)
+      description: running program's operating system target
+      default: linux
     - name: GOARCH
-      value: $(params.GOARCH)
+      description: running program's architecture target
+      default: amd64
     - name: GO111MODULE
-      value: $(params.GO111MODULE)
+      description: value of module support
+      default: auto
     - name: GOCACHE
-      value: $(params.GOCACHE)
+      description: Go caching directory path
+      default: ""
     - name: GOMODCACHE
-      value: $(params.GOMODCACHE)
-    image: docker.io/library/golang:$(params.version)-alpine
-    name: unit-test
-    script: |
-      if [ ! -e $GOPATH/src/$(params.package)/go.mod ];then
-         SRC_PATH="$GOPATH/src/$(params.package)"
-         mkdir -p $SRC_PATH
-         cp -R "$(workspaces.source.path)/$(params.context)"/* $SRC_PATH
-         cd $SRC_PATH
-      fi
-      go test $(params.flags) $(params.packages)
-    workingDir: $(workspaces.source.path)
+      description: Go mod caching directory path
+      default: ""
   workspaces:
-  - name: source
+    - name: source
+  steps:
+    - name: unit-test
+      image: docker.io/library/golang:$(params.version)-alpine
+      workingDir: $(workspaces.source.path)
+      env:
+        - name: GOOS
+          value: $(params.GOOS)
+        - name: GOARCH
+          value: $(params.GOARCH)
+        - name: GO111MODULE
+          value: $(params.GO111MODULE)
+        - name: GOCACHE
+          value: $(params.GOCACHE)
+        - name: GOMODCACHE
+          value: $(params.GOMODCACHE)
+      script: |
+        if [ ! -e $GOPATH/src/$(params.package)/go.mod ];then
+           SRC_PATH="$GOPATH/src/$(params.package)"
+           mkdir -p $SRC_PATH
+           cp -R "$(workspaces.source.path)/$(params.context)"/* $SRC_PATH
+           cd $SRC_PATH
+        fi
+        go test $(params.flags) $(params.packages)

@@ -9,6 +9,17 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 VARIANTS_FILE="${1:-${REPO_ROOT}/variants.yaml}"
 
+# Version is the single source of truth in the VERSION file at the repo root.
+# It is injected into generated task files as the app.kubernetes.io/version
+# label, so base/ templates stay version-agnostic and generation stays
+# deterministic (CI can reproduce the exact committed files).
+VERSION_FILE="${REPO_ROOT}/VERSION"
+if [[ ! -f "${VERSION_FILE}" ]]; then
+  echo "Error: VERSION file not found: ${VERSION_FILE}" >&2
+  exit 1
+fi
+VERSION="$(tr -d '[:space:]' < "${VERSION_FILE}")"
+
 if [[ ! -f "${VARIANTS_FILE}" ]]; then
   echo "Error: variants file not found: ${VARIANTS_FILE}" >&2
   exit 1
@@ -78,6 +89,7 @@ for base_file in "${BASE_DIR}"/*.yaml; do
       tail -n +2 "${base_file}" | yq eval \
         ".spec.steps[].image = \"${image}\" |
          .metadata.name = \"${task_name}\" |
+         .metadata.labels[\"app.kubernetes.io/version\"] = \"${VERSION}\" |
          .spec.description = (.spec.description + \"${description_suffix}\") |
          .metadata.annotations[\"tekton.dev/displayName\"] = (.metadata.annotations[\"tekton.dev/displayName\"] + \"${display_suffix}\")" \
         -
