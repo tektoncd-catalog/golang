@@ -5,7 +5,7 @@ This Task builds Go packages.
 ## Installation
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/tektoncd-catalog/golang/main/task/golang-build/golang-build.yaml
+kubectl apply -f https://raw.githubusercontent.com/tektoncd-catalog/golang/main/task/golang-build-alpine/golang-build-alpine.yaml
 ```
 
 ## Parameters
@@ -45,7 +45,7 @@ metadata:
   name: build-my-code
 spec:
   taskRef:
-    name: golang-build
+    name: golang-build-alpine
   workspaces:
     - name: source
       persistentVolumeClaim:
@@ -64,7 +64,7 @@ metadata:
   name: build-static-binary
 spec:
   taskRef:
-    name: golang-build
+    name: golang-build-alpine
   workspaces:
     - name: source
       persistentVolumeClaim:

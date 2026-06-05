@@ -83,7 +83,7 @@ for taskdir in "${ROOT_DIR}"/task/golang-*; do
 done
 
 # --- Detect current version from first task ---
-CURRENT_VERSION=$(grep 'app.kubernetes.io/version' "${TASK_FILES[0]}" | head -1 | sed 's/.*"\(.*\)"/\1/')
+CURRENT_VERSION=$(grep 'app.kubernetes.io/version' "${TASK_FILES[0]}" | head -1 | sed 's/.*version: *"\?\([0-9][0-9.]*\)"\?/\1/')
 CURRENT_TAG="v${CURRENT_VERSION}"
 
 echo "=== Release ${VERSION} ==="

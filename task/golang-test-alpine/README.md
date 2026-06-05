@@ -5,7 +5,7 @@ This Task runs Go tests.
 ## Installation
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/tektoncd-catalog/golang/main/task/golang-test/golang-test.yaml
+kubectl apply -f https://raw.githubusercontent.com/tektoncd-catalog/golang/main/task/golang-test-alpine/golang-test-alpine.yaml
 ```
 
 ## Parameters
@@ -46,7 +46,7 @@ metadata:
   name: test-my-code
 spec:
   taskRef:
-    name: golang-test
+    name: golang-test-alpine
   workspaces:
     - name: source
       persistentVolumeClaim:
@@ -65,7 +65,7 @@ metadata:
   name: test-specific-packages
 spec:
   taskRef:
-    name: golang-test
+    name: golang-test-alpine
   workspaces:
     - name: source
       persistentVolumeClaim:
