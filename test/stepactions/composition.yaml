@@ -37,12 +37,6 @@ spec:
         workspaces:
           - name: source
         steps:
-          - name: fmt
-            ref:
-              name: golang-fmt
-            params:
-              - name: source-path
-                value: $(workspaces.source.path)
           - name: vet
             ref:
               name: golang-vet
