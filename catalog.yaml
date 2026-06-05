@@ -17,6 +17,8 @@ tools:
     generate: [task, stepaction]
   - name: golang-fmt
     generate: [stepaction]
+  - name: golang-goimports
+    generate: [stepaction]
   - name: golang-vet
     generate: [stepaction]
   - name: golang-fix
