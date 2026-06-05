@@ -17,12 +17,17 @@
 # Release script for tektoncd-catalog/golang.
 #
 # Usage:
-#   ./hack/release.sh v1.2.0              # bump, commit, tag, push
+#   ./hack/release.sh v1.2.0              # bump VERSION, regenerate, commit, tag, push
 #   ./hack/release.sh v1.2.0 --dry-run    # show what would change
 #   ./hack/release.sh v1.2.0 --llm        # generate changelog with gh copilot
 #
-# Environment variables:
-#   SIGNING_KEY  - Path to ECDSA private key for signing tasks (default: keys/signing-key.pem)
+# Versioning: the VERSION file at the repo root is the single source of truth.
+# This script bumps it and runs hack/generate.sh, which injects the version
+# into the generated task files. Base templates stay version-agnostic.
+#
+# Signing: task YAMLs are NOT signed in-repo (tracked upstream:
+# tektoncd/cli#2894 and tektoncd/cli#2895). Bundles are cosign-signed in the
+# release workflow instead.
 
 set -euo pipefail
 
@@ -33,7 +38,6 @@ ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 VERSION=""
 DRY_RUN=false
 USE_LLM=false
-SIGNING_KEY="${SIGNING_KEY:-${ROOT_DIR}/keys/signing-key.pem}"
 
 for arg in "$@"; do
     case "${arg}" in
@@ -47,14 +51,6 @@ done
 if [[ -z "${VERSION}" ]]; then
     echo "Usage: $0 <version> [--dry-run] [--llm]"
     echo "  Example: $0 v1.2.0"
-    exit 1
-fi
-
-# Check signing key
-if [[ ! -f "${SIGNING_KEY}" ]]; then
-    echo "Error: signing key not found at ${SIGNING_KEY}"
-    echo "  Set SIGNING_KEY env var or place key at keys/signing-key.pem"
-    echo "  Generate with: openssl ecparam -genkey -name prime256v1 -noout -out keys/signing-key.pem"
     exit 1
 fi
 
@@ -82,8 +78,8 @@ for taskdir in "${ROOT_DIR}"/task/golang-*; do
     TASK_FILES+=("task/${task}/${task}.yaml")
 done
 
-# --- Detect current version from first task ---
-CURRENT_VERSION=$(grep 'app.kubernetes.io/version' "${TASK_FILES[0]}" | head -1 | sed 's/.*version: *"\?\([0-9][0-9.]*\)"\?/\1/')
+# --- Detect current version from the VERSION file (single source of truth) ---
+CURRENT_VERSION="$(tr -d '[:space:]' < "${ROOT_DIR}/VERSION")"
 CURRENT_TAG="v${CURRENT_VERSION}"
 
 echo "=== Release ${VERSION} ==="
@@ -113,8 +109,10 @@ else
     git fetch origin main 2>/dev/null || true
 fi
 
-# --- Ensure generated files are up to date ---
-echo "--- Running hack/generate.sh to sync generated task files..."
+# --- Bump VERSION (single source of truth) and regenerate task files ---
+echo "--- Bumping VERSION: ${CURRENT_VERSION} -> ${BARE_VERSION}"
+echo "${BARE_VERSION}" > "${ROOT_DIR}/VERSION"
+echo "--- Running hack/generate.sh to regenerate task files at ${BARE_VERSION}..."
 "${SCRIPT_DIR}/generate.sh"
 
 # --- Generate changelog ---
@@ -187,87 +185,27 @@ echo "--- Tag message:"
 echo "${TAG_MESSAGE}"
 echo ""
 
-# --- All files to update ---
-ALL_FILES=("${TASK_FILES[@]}" "README.md")
+# --- Files that change at release time ---
+ALL_FILES=("${TASK_FILES[@]}" "VERSION")
 
-echo "--- Version bumps:"
+echo "--- Files to commit:"
 for f in "${ALL_FILES[@]}"; do
     echo "  ${f}"
 done
 echo ""
 
-# --- Helper: apply version bumps to a file (stdout) ---
-apply_version_bumps() {
-    local f="$1"
-    sed \
-        -e "s|app.kubernetes.io/version: \"\?${CURRENT_VERSION}\"\?|app.kubernetes.io/version: \"${BARE_VERSION}\"|g" \
-        "${f}"
-}
-
-# --- Helper: update artifacthub changelog in content (stdin → stdout) ---
-apply_ah_changes() {
-    # Normalize AH_CHANGES indentation (LLM may return variable indent)
-    # Strip markdown fences, re-indent: "- kind:" lines get 6 spaces, "description:" lines get 8 spaces
-    local normalized
-    normalized=$(echo -e "${AH_CHANGES}" | grep -v '^[[:space:]]*\`\`\`' | sed -e 's/^[[:space:]]*- kind:/      - kind:/' -e 's/^[[:space:]]*description:/        description:/')
-    python3 -c "
-import re, sys
-content = sys.stdin.read()
-new_changes = '''    artifacthub.io/changes: |
-${normalized}'''
-content = re.sub(
-    r'    artifacthub\.io/changes: \|\n(      .*\n)*',
-    new_changes.rstrip() + '\n',
-    content,
-)
-sys.stdout.write(content)
-"
-}
-
 if [[ "${DRY_RUN}" == true ]]; then
     echo "--- Dry run: showing changes ---"
-
-    for f in "${ALL_FILES[@]}"; do
-        echo ""
-        echo "=== ${f} ==="
-        if [[ "${f}" == *".yaml" ]]; then
-            apply_version_bumps "${f}" | apply_ah_changes | diff -u "${f}" - || true
-        else
-            apply_version_bumps "${f}" | diff -u "${f}" - || true
-        fi
-    done
+    git --no-pager diff -- VERSION task/ || true
     echo ""
+    echo "--- Restoring working tree (dry run) ---"
+    git checkout -- VERSION task/ 2>/dev/null || true
     echo "Dry run complete. Run without --dry-run to apply."
     exit 0
 fi
 
-# --- Apply version bumps ---
-echo "--- Applying version bumps..."
-
-for f in "${ALL_FILES[@]}"; do
-    if [[ "${f}" == *".yaml" ]]; then
-        apply_version_bumps "${f}" | apply_ah_changes > "${f}.tmp" && mv "${f}.tmp" "${f}"
-    else
-        apply_version_bumps "${f}" > "${f}.tmp" && mv "${f}.tmp" "${f}"
-    fi
-done
-
-# --- Sign task YAMLs ---
-echo "--- Signing task YAMLs with ${SIGNING_KEY}..."
-for f in "${TASK_FILES[@]}"; do
-    echo "  Signing ${f}"
-    tkn task sign "${f}" -K="${SIGNING_KEY}" -f="${f}"
-    # Workaround: tkn task sign adds empty 'resources: {}' to steps (from
-    # Kubernetes Container spec), which causes strict decoding errors on apply.
-    # Strip it after signing. The signature covers the canonical form with
-    # resources: {}, so this technically invalidates it, but Artifact Hub only
-    # checks for presence, and bundles are separately cosign-signed.
-    # TODO: remove once https://github.com/tektoncd/cli/issues/XXXX is fixed
-    sed -i '/^    resources: {}$/d' "${f}"
-done
-
 echo "--- Committing..."
-git add "${ALL_FILES[@]}"
+git add VERSION task/
 git commit --signoff --message "chore: bump version to ${VERSION}"
 
 echo "--- Pushing to main..."

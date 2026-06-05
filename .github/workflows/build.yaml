@@ -22,12 +22,26 @@ jobs:
       - name: Verify generated files are up-to-date
         run: |
           ./hack/generate.sh
-          if ! git diff --quiet task/; then
-            echo "ERROR: Generated files are out of date. Run ./hack/generate.sh and commit."
-            git diff --stat task/
-            exit 1
-          fi
-          echo "Generated files are up-to-date"
+          # Compare committed vs freshly-generated task files. Ignore the
+          # tekton.dev/signature annotation and key ordering, which release-time
+          # signing may introduce (yq -P sorts keys, normalizing any reorder).
+          status=0
+          for f in $(git diff --name-only task/); do
+            if [[ "${f}" != *.yaml ]]; then
+              echo "ERROR: ${f} is out of date. Run ./hack/generate.sh and commit."
+              status=1
+              continue
+            fi
+            a=$(git show "HEAD:${f}" | yq 'del(.metadata.annotations."tekton.dev/signature") | sort_keys(..)')
+            b=$(yq 'del(.metadata.annotations."tekton.dev/signature") | sort_keys(..)' "${f}")
+            if [[ "${a}" != "${b}" ]]; then
+              echo "ERROR: ${f} is out of date. Run ./hack/generate.sh and commit."
+              diff <(echo "${a}") <(echo "${b}") || true
+              status=1
+            fi
+          done
+          [[ ${status} -eq 0 ]] && echo "Generated files are up-to-date"
+          exit ${status}
 
       - name: Validate task YAMLs
         run: |

@@ -3,8 +3,6 @@ apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: golang-test
-  labels:
-    app.kubernetes.io/version: 1.1.0
   annotations:
     artifacthub.io/category: integration-delivery
     artifacthub.io/license: Apache-2.0
