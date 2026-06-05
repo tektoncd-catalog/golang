@@ -55,10 +55,8 @@ for sadir in "${ROOT_DIR}"/stepaction/*/; do
 done
 
 echo "--- Applying StepAction composition test"
-# Use 'create' for the PipelineRun (uses generateName for idempotency),
-# but 'apply' for the Pipeline definition.
-kubectl apply -f <(yq 'select(.kind == "Pipeline")' "${ROOT_DIR}/test/stepactions/composition.yaml")
-kubectl create -f <(yq 'select(.kind == "PipelineRun")' "${ROOT_DIR}/test/stepactions/composition.yaml")
+kubectl apply -f "${ROOT_DIR}/test/stepactions/pipeline.yaml"
+kubectl create -f "${ROOT_DIR}/test/stepactions/pipelinerun.yaml"
 
 sleep 5
 
