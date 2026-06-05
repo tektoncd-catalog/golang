@@ -39,8 +39,11 @@ spec:
       default: "1.26"
   image: docker.io/library/golang:$(params.version)-alpine
   workingDir: $(params.source-path)
+  env:
+    - name: PARAM_PATHS
+      value: $(params.paths)
   script: |
-    unformatted=$(gofmt -l $(params.paths))
+    unformatted=$(gofmt -l ${PARAM_PATHS})
     if [ -n "${unformatted}" ]; then
       echo "The following files are not formatted:"
       echo "${unformatted}"

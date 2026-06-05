@@ -73,11 +73,21 @@ spec:
     value: $(params.GOCACHE)
   - name: GOMODCACHE
     value: $(params.GOMODCACHE)
+  - name: PACKAGE
+    value: $(params.package)
+  - name: PACKAGES
+    value: $(params.packages)
+  - name: FLAGS
+    value: $(params.flags)
+  - name: CONTEXT
+    value: $(params.context)
+  - name: SOURCE_PATH
+    value: $(params.source-path)
   script: |
-    if [ ! -e $GOPATH/src/$(params.package)/go.mod ];then
-       SRC_PATH="$GOPATH/src/$(params.package)"
+    if [ ! -e $GOPATH/src/${PACKAGE}/go.mod ];then
+       SRC_PATH="$GOPATH/src/${PACKAGE}"
        mkdir -p $SRC_PATH
-       cp -R "$(params.source-path)/$(params.context)"/* $SRC_PATH
+       cp -R "${SOURCE_PATH}/${CONTEXT}"/* $SRC_PATH
        cd $SRC_PATH
     fi
-    go test $(params.flags) $(params.packages)
+    go test ${FLAGS} ${PACKAGES}

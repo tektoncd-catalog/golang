@@ -40,7 +40,15 @@ SOURCE_PARAM = {
 }
 
 WORKSPACE_PATH_REF = "$(workspaces.source.path)"
-PARAM_PATH_REF = "$(params.source-path)"
+# In StepAction scripts, $(params.*) is not allowed — use an env var instead.
+# The workingDir and env value fields still support $(params.*) substitution.
+ENV_SOURCE_PATH_REF = "${SOURCE_PATH}"
+PARAM_SOURCE_PATH_REF = "$(params.source-path)"
+
+SOURCE_PATH_ENV = {
+    "name": "SOURCE_PATH",
+    "value": "$(params.source-path)",
+}
 
 
 class StepActionDumper(yaml.SafeDumper):
@@ -68,8 +76,14 @@ def transform_description(desc: str) -> str:
     return d
 
 
-def rewrite_workspace_refs(text: str) -> str:
-    return text.replace(WORKSPACE_PATH_REF, PARAM_PATH_REF)
+def rewrite_workspace_refs_script(text: str) -> str:
+    """Rewrite workspace refs in scripts to env var (no $(params.*) in scripts)."""
+    return text.replace(WORKSPACE_PATH_REF, ENV_SOURCE_PATH_REF)
+
+
+def rewrite_workspace_refs_field(text: str) -> str:
+    """Rewrite workspace refs in non-script fields (workingDir etc.)."""
+    return text.replace(WORKSPACE_PATH_REF, PARAM_SOURCE_PATH_REF)
 
 
 def generate(task_file: str, output_file: str) -> None:
@@ -114,15 +128,19 @@ def generate(task_file: str, output_file: str) -> None:
     sa["spec"]["image"] = step["image"]
 
     if "workingDir" in step:
-        sa["spec"]["workingDir"] = rewrite_workspace_refs(step["workingDir"])
+        sa["spec"]["workingDir"] = rewrite_workspace_refs_field(step["workingDir"])
 
     if "env" in step:
         sa["spec"]["env"] = copy.deepcopy(step["env"])
+    else:
+        sa["spec"]["env"] = []
+    # Add SOURCE_PATH env var for script references.
+    sa["spec"]["env"].append(copy.deepcopy(SOURCE_PATH_ENV))
 
     if "securityContext" in step:
         sa["spec"]["securityContext"] = copy.deepcopy(step["securityContext"])
 
-    sa["spec"]["script"] = rewrite_workspace_refs(step.get("script", ""))
+    sa["spec"]["script"] = rewrite_workspace_refs_script(step.get("script", ""))
 
     header = (
         f"# Generated from task/{meta['name']}/{meta['name']}.yaml \u2014 do not edit directly.\n"
