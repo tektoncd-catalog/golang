@@ -42,6 +42,15 @@ jobs:
             tkn bundle push "${REGISTRY}/${task}:latest" \
               -f "${taskdir}/${task}.yaml"
           done
+          for sadir in stepaction/*/; do
+            sa=$(basename "${sadir}")
+            [[ -f "${sadir}${sa}.yaml" ]] || continue
+            echo "--- Publishing bundle for stepaction-${sa}"
+            tkn bundle push "${REGISTRY}/stepaction-${sa}:${GIT_TAG}" \
+              -f "${sadir}${sa}.yaml"
+            tkn bundle push "${REGISTRY}/stepaction-${sa}:latest" \
+              -f "${sadir}${sa}.yaml"
+          done
 
       - name: Sign Tekton Bundles
         env:
@@ -58,6 +67,16 @@ jobs:
                 -a GIT_TAG="${GIT_TAG}" \
                 "${REGISTRY}/${task}@${digest}"
           done
+          for sadir in stepaction/*/; do
+            sa=$(basename "${sadir}")
+            [[ -f "${sadir}${sa}.yaml" ]] || continue
+            echo "--- Signing bundle for stepaction-${sa}"
+            digest=$(crane digest "${REGISTRY}/stepaction-${sa}:${GIT_TAG}")
+            cosign sign --yes \
+                -a GIT_HASH="${{ github.sha }}" \
+                -a GIT_TAG="${GIT_TAG}" \
+                "${REGISTRY}/stepaction-${sa}@${digest}"
+          done
 
       - name: Create GitHub Release
         env:
@@ -72,6 +91,11 @@ jobs:
             task=$(basename "${taskdir}")
             INSTALL_LINES+="          kubectl apply -f https://raw.githubusercontent.com/${{ github.repository }}/${GIT_TAG}/${taskdir}/${task}.yaml\n"
             BUNDLE_LINES+="          - \`${REGISTRY}/${task}:${GIT_TAG}\`\n"
+          done
+          for sadir in stepaction/*/; do
+            sa=$(basename "${sadir}")
+            [[ -f "${sadir}${sa}.yaml" ]] || continue
+            BUNDLE_LINES+="          - \`${REGISTRY}/stepaction-${sa}:${GIT_TAG}\`\n"
           done
 
           cat <<EOF > release-notes.md

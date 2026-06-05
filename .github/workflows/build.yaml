@@ -22,11 +22,11 @@ jobs:
       - name: Verify generated files are up-to-date
         run: |
           ./hack/generate.sh
-          # Compare committed vs freshly-generated task files. Ignore the
+          # Compare committed vs freshly-generated files. Ignore the
           # tekton.dev/signature annotation and key ordering, which release-time
-          # signing may introduce (yq -P sorts keys, normalizing any reorder).
+          # signing may introduce (sort_keys normalizes any reorder).
           status=0
-          for f in $(git diff --name-only task/); do
+          for f in $(git diff --name-only task/ stepaction/); do
             if [[ "${f}" != *.yaml ]]; then
               echo "ERROR: ${f} is out of date. Run ./hack/generate.sh and commit."
               status=1
@@ -43,27 +43,30 @@ jobs:
           [[ ${status} -eq 0 ]] && echo "Generated files are up-to-date"
           exit ${status}
 
-      - name: Validate task YAMLs
+      - name: Validate task and stepaction YAMLs
         run: |
-          for f in task/*/golang-*.yaml; do
+          validate() {
+            local f="$1" want_kind="$2" want_api="$3"
             echo -n "--- Validating ${f} ... "
-            # Check YAML is valid and has expected Tekton structure
             apiVersion=$(yq '.apiVersion' "${f}")
             kind=$(yq '.kind' "${f}")
             name=$(yq '.metadata.name' "${f}")
-            if [[ "${apiVersion}" != "tekton.dev/v1" ]]; then
-              echo "FAIL: expected apiVersion tekton.dev/v1, got ${apiVersion}"
-              exit 1
+            if [[ "${apiVersion}" != "${want_api}" ]]; then
+              echo "FAIL: expected apiVersion ${want_api}, got ${apiVersion}"; exit 1
             fi
-            if [[ "${kind}" != "Task" ]]; then
-              echo "FAIL: expected kind Task, got ${kind}"
-              exit 1
+            if [[ "${kind}" != "${want_kind}" ]]; then
+              echo "FAIL: expected kind ${want_kind}, got ${kind}"; exit 1
             fi
             if [[ -z "${name}" || "${name}" == "null" ]]; then
-              echo "FAIL: metadata.name is missing"
-              exit 1
+              echo "FAIL: metadata.name is missing"; exit 1
             fi
             echo "OK (${kind}/${name})"
+          }
+          for f in task/*/golang-*.yaml; do
+            validate "${f}" Task tekton.dev/v1
+          done
+          for f in stepaction/*/*.yaml; do
+            validate "${f}" StepAction tekton.dev/v1beta1
           done
 
   e2e:
@@ -114,6 +117,25 @@ jobs:
           TIMEOUT: 300s
         run: ./test/e2e-tests-alpine.sh
 
+  e2e-stepactions:
+    name: E2E StepActions (latest LTS)
+    needs: [lint]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Create Kind cluster
+        uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc # v1.14.0
+        with:
+          cluster_name: kind
+          wait: 120s
+
+      - name: Run StepAction e2e tests
+        env:
+          PIPELINE_VERSION: v1.12.0
+          TIMEOUT: 300s
+        run: ./test/e2e-stepactions.sh
+
   e2e-bundle:
     name: E2E Bundle
     needs: [lint]
@@ -137,7 +159,7 @@ jobs:
 
   ci-summary:
     name: CI summary
-    needs: [lint, e2e, e2e-alpine, e2e-bundle]
+    needs: [lint, e2e, e2e-alpine, e2e-stepactions, e2e-bundle]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -147,6 +169,7 @@ jobs:
             "lint=${NEEDS_LINT_RESULT}"
             "e2e=${NEEDS_E2E_RESULT}"
             "e2e-alpine=${NEEDS_E2E_ALPINE_RESULT}"
+            "e2e-stepactions=${NEEDS_E2E_STEPACTIONS_RESULT}"
             "e2e-bundle=${NEEDS_E2E_BUNDLE_RESULT}"
           )
           failed=0
@@ -169,4 +192,5 @@ jobs:
           NEEDS_LINT_RESULT: ${{ needs.lint.result }}
           NEEDS_E2E_RESULT: ${{ needs.e2e.result }}
           NEEDS_E2E_ALPINE_RESULT: ${{ needs.e2e-alpine.result }}
+          NEEDS_E2E_STEPACTIONS_RESULT: ${{ needs.e2e-stepactions.result }}
           NEEDS_E2E_BUNDLE_RESULT: ${{ needs.e2e-bundle.result }}

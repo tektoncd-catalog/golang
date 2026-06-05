@@ -2,7 +2,7 @@
 
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/golang)](https://artifacthub.io/packages/search?repo=golang)
 
-This repository contains verified Tekton Tasks for building and testing Go projects.
+This repository contains verified Tekton Tasks and StepActions for building and testing Go projects.
 
 ## Tasks
 
@@ -12,6 +12,53 @@ This repository contains verified Tekton Tasks for building and testing Go proje
 | [`golang-build-alpine`](task/golang-build-alpine/) | Build Go packages (Alpine) | 1.26 |
 | [`golang-test`](task/golang-test/) | Run Go tests | 1.26 |
 | [`golang-test-alpine`](task/golang-test-alpine/) | Run Go tests (Alpine) | 1.26 |
+
+## StepActions
+
+[StepActions](https://tekton.dev/docs/pipelines/stepactions/) are composable
+steps you can combine into a single Task — e.g. `git-clone` + `golang-fmt` +
+`golang-vet` + `golang-build` + `golang-test`. Each StepAction is also
+available in Debian (default) and Alpine variants.
+
+| StepAction | Description | Task equivalent |
+|------------|-------------|-----------------|
+| [`golang-build`](stepaction/golang-build/) | Build Go packages | ✅ |
+| [`golang-test`](stepaction/golang-test/) | Run Go tests | ✅ |
+| [`golang-fmt`](stepaction/golang-fmt/) | Check formatting (`gofmt -l`) | StepAction-only |
+| [`golang-vet`](stepaction/golang-vet/) | Static analysis (`go vet`) | StepAction-only |
+| [`golang-fix`](stepaction/golang-fix/) | Modernize code (`go fix`, Go 1.26+) | StepAction-only |
+| [`govulncheck`](stepaction/govulncheck/) | Vulnerability scanning | StepAction-only |
+
+StepActions require Tekton Pipelines with `enable-step-actions: "true"`. The
+source code is passed via the `source-path` param (instead of a workspace).
+
+```yaml
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: go-ci
+spec:
+  workspaces:
+    - name: source
+      persistentVolumeClaim:
+        claimName: my-source
+  taskSpec:
+    workspaces:
+      - name: source
+    steps:
+      - name: fmt
+        ref: { name: golang-fmt }
+        params:
+          - name: source-path
+            value: $(workspaces.source.path)
+      - name: build
+        ref: { name: golang-build }
+        params:
+          - name: source-path
+            value: $(workspaces.source.path)
+          - name: package
+            value: github.com/my-org/my-project
+```
 
 
 ## Variants

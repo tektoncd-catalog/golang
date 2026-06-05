@@ -1,0 +1,97 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: golang-stepactions-pipeline
+spec:
+  workspaces:
+    - name: shared-workspace
+  params:
+    - name: url
+      description: Repository URL to clone from
+    - name: package
+      description: base package
+    - name: packages
+      description: packages to build/test
+      default: "./..."
+  tasks:
+    - name: fetch-repository
+      taskRef:
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+      params:
+        - name: url
+          value: $(params.url)
+        - name: deleteExisting
+          value: "true"
+    # A single Task composed entirely of StepActions, demonstrating the
+    # composable workflow: fmt + vet + build + test as steps.
+    - name: go-checks
+      runAfter:
+        - fetch-repository
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+      taskSpec:
+        workspaces:
+          - name: source
+        steps:
+          - name: fmt
+            ref:
+              name: golang-fmt
+            params:
+              - name: source-path
+                value: $(workspaces.source.path)
+          - name: vet
+            ref:
+              name: golang-vet
+            params:
+              - name: source-path
+                value: $(workspaces.source.path)
+              - name: packages
+                value: $(params.packages)
+          - name: build
+            ref:
+              name: golang-build
+            params:
+              - name: source-path
+                value: $(workspaces.source.path)
+              - name: package
+                value: $(params.package)
+              - name: packages
+                value: $(params.packages)
+          - name: test
+            ref:
+              name: golang-test
+            params:
+              - name: source-path
+                value: $(workspaces.source.path)
+              - name: package
+                value: $(params.package)
+              - name: packages
+                value: $(params.packages)
+---
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: golang-stepactions-run-uuid
+spec:
+  pipelineRef:
+    name: golang-stepactions-pipeline
+  params:
+    - name: url
+      value: https://github.com/google/uuid
+    - name: package
+      value: github.com/google/uuid
+    - name: packages
+      value: "./..."
+  workspaces:
+    - name: shared-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 256Mi
