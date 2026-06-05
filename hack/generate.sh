@@ -44,16 +44,22 @@ for base_file in "${BASE_DIR}"/*.yaml; do
     # Create task dir if it doesn't exist
     mkdir -p "${task_dir}"
 
-    # For non-default variants, seed README.md and OWNERS from the default task dir
-    # if they don't already exist in the target dir (preserves any customisations).
+    # For non-default variants, seed OWNERS and generate README from the default
+    # task dir, replacing task names and paths for the variant.
     if [[ -n "${suffix}" ]]; then
       default_dir="${TASK_DIR}/${base_name}"
-      for extra_file in README.md OWNERS; do
-        if [[ -f "${default_dir}/${extra_file}" && ! -f "${task_dir}/${extra_file}" ]]; then
-          cp "${default_dir}/${extra_file}" "${task_dir}/${extra_file}"
-          echo "    Copied ${extra_file} from ${default_dir}/"
-        fi
-      done
+      # Copy OWNERS as-is
+      if [[ -f "${default_dir}/OWNERS" && ! -f "${task_dir}/OWNERS" ]]; then
+        cp "${default_dir}/OWNERS" "${task_dir}/OWNERS"
+        echo "    Copied OWNERS from ${default_dir}/"
+      fi
+      # Generate README with variant-specific names and paths
+      if [[ -f "${default_dir}/README.md" ]]; then
+        sed -e "s|task/${base_name}/${base_name}|task/${task_name}/${task_name}|g" \
+            -e "s|name: ${base_name}|name: ${task_name}|g" \
+            "${default_dir}/README.md" > "${task_dir}/README.md"
+        echo "    Generated README.md from ${default_dir}/"
+      fi
     fi
 
     # Build display-name suffix: "-alpine" → " (alpine)", "" → ""
