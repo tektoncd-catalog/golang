@@ -79,7 +79,7 @@ jobs:
 
           Install tasks directly:
           \`\`\`bash
-$(printf '%b' "${INSTALL_LINES}")
+          $(printf '%b' "${INSTALL_LINES}")
           \`\`\`
 
           Or use via bundle resolver:
@@ -96,7 +96,7 @@ $(printf '%b' "${INSTALL_LINES}")
           \`\`\`
 
           ### Bundle images
-$(printf '%b' "${BUNDLE_LINES}")
+          $(printf '%b' "${BUNDLE_LINES}")
           All bundles are signed with [cosign](https://github.com/sigstore/cosign).
           EOF
 
