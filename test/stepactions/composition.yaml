@@ -37,6 +37,12 @@ spec:
         workspaces:
           - name: source
         steps:
+          - name: fmt
+            ref:
+              name: golang-fmt
+            params:
+              - name: source-path
+                value: $(workspaces.source.path)
           - name: vet
             ref:
               name: golang-vet
@@ -75,9 +81,9 @@ spec:
     name: golang-stepactions-pipeline
   params:
     - name: url
-      value: https://github.com/google/uuid
+      value: https://github.com/stretchr/testify
     - name: package
-      value: github.com/google/uuid
+      value: github.com/stretchr/testify
     - name: packages
       value: "./..."
   workspaces:
