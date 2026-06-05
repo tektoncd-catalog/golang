@@ -82,11 +82,19 @@ spec:
     value: $(params.CGO_ENABLED)
   - name: GOSUMDB
     value: $(params.GOSUMDB)
+  - name: PACKAGE
+    value: $(params.package)
+  - name: PACKAGES
+    value: $(params.packages)
+  - name: FLAGS
+    value: $(params.flags)
+  - name: SOURCE_PATH
+    value: $(params.source-path)
   script: |
-    if [ ! -e $GOPATH/src/$(params.package)/go.mod ];then
-      SRC_PATH="$GOPATH/src/$(params.package)"
+    if [ ! -e $GOPATH/src/${PACKAGE}/go.mod ];then
+      SRC_PATH="$GOPATH/src/${PACKAGE}"
       mkdir -p $SRC_PATH
-      cp -R "$(params.source-path)"/* $SRC_PATH
+      cp -R "${SOURCE_PATH}"/* $SRC_PATH
       cd $SRC_PATH
     fi
-    go build $(params.flags) $(params.packages)
+    go build ${FLAGS} ${PACKAGES}

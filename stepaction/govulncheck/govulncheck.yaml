@@ -45,7 +45,11 @@ spec:
   env:
     - name: GOBIN
       value: /tekton/home/go/bin
+    - name: PARAM_GOVULNCHECK_VERSION
+      value: $(params.govulncheck-version)
+    - name: PARAM_PACKAGES
+      value: $(params.packages)
   script: |
     export PATH="${GOBIN}:${PATH}"
-    go install golang.org/x/vuln/cmd/govulncheck@$(params.govulncheck-version)
-    govulncheck $(params.packages)
+    go install golang.org/x/vuln/cmd/govulncheck@${PARAM_GOVULNCHECK_VERSION}
+    govulncheck ${PARAM_PACKAGES}

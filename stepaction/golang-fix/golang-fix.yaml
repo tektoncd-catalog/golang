@@ -39,5 +39,8 @@ spec:
       default: "1.26"
   image: docker.io/library/golang:$(params.version)
   workingDir: $(params.source-path)
+  env:
+    - name: PARAM_PACKAGES
+      value: $(params.packages)
   script: |
-    go fix $(params.packages)
+    go fix ${PARAM_PACKAGES}

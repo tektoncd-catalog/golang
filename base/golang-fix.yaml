@@ -37,5 +37,8 @@ spec:
       default: "1.26"
   image: IMAGE_PLACEHOLDER
   workingDir: $(params.source-path)
+  env:
+    - name: PARAM_PACKAGES
+      value: $(params.packages)
   script: |
-    go fix $(params.packages)
+    go fix ${PARAM_PACKAGES}
