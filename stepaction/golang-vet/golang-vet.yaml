@@ -1,0 +1,46 @@
+# Generated from base/golang-vet.yaml — do not edit directly.
+apiVersion: tekton.dev/v1beta1
+kind: StepAction
+metadata:
+  name: golang-vet
+  annotations:
+    artifacthub.io/category: integration-delivery
+    artifacthub.io/license: Apache-2.0
+    artifacthub.io/links: |
+      - name: support
+        url: https://github.com/tektoncd-catalog/golang/issues
+    artifacthub.io/maintainers: |
+      - name: Vincent Demeester
+        email: vincent@sbr.pm
+      - name: vinamra28
+        email: jvinamra776@gmail.com
+    artifacthub.io/provider: Tekton
+    tekton.dev/catalog: tektoncd.golang
+    tekton.dev/catalog-support-tier: verified
+    tekton.dev/catalog-url: https://github.com/tektoncd-catalog/golang
+    tekton.dev/categories: Code Quality
+    tekton.dev/displayName: golang vet
+    tekton.dev/pipelines.minVersion: 0.40.0
+    tekton.dev/platforms: linux/amd64,linux/s390x,linux/ppc64le,linux/arm64
+    tekton.dev/tags: lint
+  labels:
+    app.kubernetes.io/version: 1.2.0
+spec:
+  description: This StepAction runs 'go vet' to report likely mistakes in Go source code.
+  params:
+    - name: source-path
+      description: Path to the Go source code to operate on.
+      type: string
+    - name: packages
+      description: packages to vet
+      default: ./...
+    - name: flags
+      description: additional flags to pass to 'go vet'
+      default: ""
+    - name: version
+      description: golang version to use
+      default: "1.26"
+  image: docker.io/library/golang:$(params.version)
+  workingDir: $(params.source-path)
+  script: |
+    go vet $(params.flags) $(params.packages)

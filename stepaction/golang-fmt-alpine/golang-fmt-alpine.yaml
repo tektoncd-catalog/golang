@@ -1,0 +1,51 @@
+# Generated from base/golang-fmt.yaml — do not edit directly.
+apiVersion: tekton.dev/v1beta1
+kind: StepAction
+metadata:
+  name: golang-fmt-alpine
+  annotations:
+    artifacthub.io/category: integration-delivery
+    artifacthub.io/license: Apache-2.0
+    artifacthub.io/links: |
+      - name: support
+        url: https://github.com/tektoncd-catalog/golang/issues
+    artifacthub.io/maintainers: |
+      - name: Vincent Demeester
+        email: vincent@sbr.pm
+      - name: vinamra28
+        email: jvinamra776@gmail.com
+    artifacthub.io/provider: Tekton
+    tekton.dev/catalog: tektoncd.golang
+    tekton.dev/catalog-support-tier: verified
+    tekton.dev/catalog-url: https://github.com/tektoncd-catalog/golang
+    tekton.dev/categories: Code Quality
+    tekton.dev/displayName: golang fmt (alpine)
+    tekton.dev/pipelines.minVersion: 0.40.0
+    tekton.dev/platforms: linux/amd64,linux/s390x,linux/ppc64le,linux/arm64
+    tekton.dev/tags: lint
+  labels:
+    app.kubernetes.io/version: 1.2.0
+spec:
+  description: This StepAction checks that Go source code is formatted with gofmt and fails if any file needs formatting. Uses the Alpine-based Go image for smaller footprint.
+  params:
+    - name: source-path
+      description: Path to the Go source code to operate on.
+      type: string
+    - name: paths
+      description: paths to check for formatting
+      default: .
+    - name: version
+      description: golang version to use
+      default: "1.26"
+  image: docker.io/library/golang:$(params.version)-alpine
+  workingDir: $(params.source-path)
+  script: |
+    unformatted=$(gofmt -l $(params.paths))
+    if [ -n "${unformatted}" ]; then
+      echo "The following files are not formatted:"
+      echo "${unformatted}"
+      echo ""
+      echo "Run 'gofmt -w' on them to fix."
+      exit 1
+    fi
+    echo "All Go files are correctly formatted."

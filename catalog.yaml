@@ -1,0 +1,33 @@
+# Catalog manifest — single source of truth for what the generator produces.
+#
+# Each tool lists the kinds to generate:
+#   - task:       a Tekton Task (from a kind: Task base template)
+#   - stepaction: a Tekton StepAction
+#                 * derived from the generated Task when the base is a Task
+#                 * generated directly when the base is a kind: StepAction template
+#
+# Every tool is produced for every variant below (Debian + Alpine).
+#
+# Downstream consumers can fork this file and point the generator at it:
+#   ./hack/generate.sh my-catalog.yaml
+tools:
+  - name: golang-build
+    generate: [task, stepaction]
+  - name: golang-test
+    generate: [task, stepaction]
+  - name: golang-fmt
+    generate: [stepaction]
+  - name: golang-vet
+    generate: [stepaction]
+  - name: golang-fix
+    generate: [stepaction]
+  - name: govulncheck
+    generate: [stepaction]
+
+variants:
+  - suffix: ""
+    image: "docker.io/library/golang:$(params.version)"
+    description_suffix: ""
+  - suffix: "-alpine"
+    image: "docker.io/library/golang:$(params.version)-alpine"
+    description_suffix: " Uses the Alpine-based Go image for smaller footprint."

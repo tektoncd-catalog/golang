@@ -1,0 +1,43 @@
+# Generated from base/golang-fix.yaml — do not edit directly.
+apiVersion: tekton.dev/v1beta1
+kind: StepAction
+metadata:
+  name: golang-fix
+  annotations:
+    artifacthub.io/category: integration-delivery
+    artifacthub.io/license: Apache-2.0
+    artifacthub.io/links: |
+      - name: support
+        url: https://github.com/tektoncd-catalog/golang/issues
+    artifacthub.io/maintainers: |
+      - name: Vincent Demeester
+        email: vincent@sbr.pm
+      - name: vinamra28
+        email: jvinamra776@gmail.com
+    artifacthub.io/provider: Tekton
+    tekton.dev/catalog: tektoncd.golang
+    tekton.dev/catalog-support-tier: verified
+    tekton.dev/catalog-url: https://github.com/tektoncd-catalog/golang
+    tekton.dev/categories: Code Quality
+    tekton.dev/displayName: golang fix
+    tekton.dev/pipelines.minVersion: 0.40.0
+    tekton.dev/platforms: linux/amd64,linux/s390x,linux/ppc64le,linux/arm64
+    tekton.dev/tags: modernize
+  labels:
+    app.kubernetes.io/version: 1.2.0
+spec:
+  description: This StepAction runs 'go fix' to modernize Go source code to use newer language and library features (Go 1.26+).
+  params:
+    - name: source-path
+      description: Path to the Go source code to operate on.
+      type: string
+    - name: packages
+      description: packages to fix
+      default: ./...
+    - name: version
+      description: golang version to use (1.26+ required for the modernizing 'go fix')
+      default: "1.26"
+  image: docker.io/library/golang:$(params.version)
+  workingDir: $(params.source-path)
+  script: |
+    go fix $(params.packages)
