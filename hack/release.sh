@@ -149,7 +149,7 @@ Output the two sections separated by the exact string ---SEPARATOR--- on its own
     LLM_OUTPUT=$(gh copilot -p "${PROMPT}" 2>/dev/null || echo "")
 
     if [[ -n "${LLM_OUTPUT}" ]]; then
-        AH_CHANGES=$(echo "${LLM_OUTPUT}" | sed -n '/^ *- kind:/,/---SEPARATOR---/p' | grep -v '^---SEPARATOR---')
+        AH_CHANGES=$(echo "${LLM_OUTPUT}" | sed -n '/^ *- kind:/,/---SEPARATOR---/p' | grep -v '^---SEPARATOR---' | sed 's/^[[:space:]]*//')
         TAG_MESSAGE=$(echo "${LLM_OUTPUT}" | sed -n '/^---SEPARATOR---$/,$ p' | tail -n +2 | sed '/^$/d; /^[[:space:]]*$/d' | sed '1{/^$/d}')
     else
         echo "Warning: gh copilot not available, falling back to git log"
@@ -163,11 +163,11 @@ if [[ "${USE_LLM}" != true ]]; then
     while IFS= read -r line; do
         msg="${line#* }"  # strip commit hash
         case "${msg}" in
-            feat:*|feat\(*) AH_CHANGES="${AH_CHANGES}      - kind: added\n        description: ${msg#*: }\n" ;;
-            fix:*|fix\(*)   AH_CHANGES="${AH_CHANGES}      - kind: fixed\n        description: ${msg#*: }\n" ;;
-            chore:*|ci:*|build*) AH_CHANGES="${AH_CHANGES}      - kind: changed\n        description: ${msg#*: }\n" ;;
-            docs:*)         AH_CHANGES="${AH_CHANGES}      - kind: changed\n        description: ${msg#*: }\n" ;;
-            *)              AH_CHANGES="${AH_CHANGES}      - kind: changed\n        description: ${msg}\n" ;;
+            feat:*|feat\(*) AH_CHANGES="${AH_CHANGES}- kind: added\n  description: ${msg#*: }\n" ;;
+            fix:*|fix\(*)   AH_CHANGES="${AH_CHANGES}- kind: fixed\n  description: ${msg#*: }\n" ;;
+            chore:*|ci:*|build*) AH_CHANGES="${AH_CHANGES}- kind: changed\n  description: ${msg#*: }\n" ;;
+            docs:*)         AH_CHANGES="${AH_CHANGES}- kind: changed\n  description: ${msg#*: }\n" ;;
+            *)              AH_CHANGES="${AH_CHANGES}- kind: changed\n  description: ${msg}\n" ;;
         esac
     done <<< "${COMMITS}"
 
@@ -193,6 +193,17 @@ for sadir in "${ROOT_DIR}"/stepaction/*/; do
     [[ -f "${sadir}${sa}.yaml" ]] && STEPACTION_FILES+=("stepaction/${sa}/${sa}.yaml")
 done
 ALL_FILES=("${TASK_FILES[@]}" "${STEPACTION_FILES[@]}" "VERSION")
+
+# --- Inject artifacthub.io/changes into all generated YAMLs ---
+if [[ -n "${AH_CHANGES}" ]]; then
+    echo "--- Injecting artifacthub.io/changes annotation..."
+    AH_CHANGES_BLOCK="$(printf '%b' "${AH_CHANGES}")"
+    for f in "${TASK_FILES[@]}" "${STEPACTION_FILES[@]}"; do
+        AH_CHANGES_BLOCK="${AH_CHANGES_BLOCK}" yq -i \
+            '.metadata.annotations["artifacthub.io/changes"] = strenv(AH_CHANGES_BLOCK)' \
+            "${f}"
+    done
+fi
 
 echo "--- Files to commit:"
 for f in "${ALL_FILES[@]}"; do
