@@ -32,8 +32,8 @@ jobs:
               status=1
               continue
             fi
-            a=$(git show "HEAD:${f}" | yq 'del(.metadata.annotations."tekton.dev/signature") | sort_keys(..)')
-            b=$(yq 'del(.metadata.annotations."tekton.dev/signature") | sort_keys(..)' "${f}")
+            a=$(git show "HEAD:${f}" | yq 'del(.metadata.annotations."tekton.dev/signature", .metadata.annotations."artifacthub.io/changes") | sort_keys(..)')
+            b=$(yq 'del(.metadata.annotations."tekton.dev/signature", .metadata.annotations."artifacthub.io/changes") | sort_keys(..)' "${f}")
             if [[ "${a}" != "${b}" ]]; then
               echo "ERROR: ${f} is out of date. Run ./hack/generate.sh and commit."
               diff <(echo "${a}") <(echo "${b}") || true
