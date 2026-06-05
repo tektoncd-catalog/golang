@@ -1,0 +1,25 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: golang-stepactions-run-
+spec:
+  pipelineRef:
+    name: golang-stepactions-pipeline
+  params:
+    - name: url
+      value: https://github.com/sirupsen/logrus
+    - name: revision
+      value: d4a50659cfd64d348122edc79ee342dbb526e5de
+    - name: package
+      value: github.com/sirupsen/logrus
+    - name: packages
+      value: "./..."
+  workspaces:
+    - name: shared-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 256Mi

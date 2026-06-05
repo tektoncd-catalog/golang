@@ -8,6 +8,9 @@ spec:
   params:
     - name: url
       description: Repository URL to clone from
+    - name: revision
+      description: Git revision to checkout
+      default: main
     - name: package
       description: base package
     - name: packages
@@ -23,6 +26,8 @@ spec:
       params:
         - name: url
           value: $(params.url)
+        - name: revision
+          value: $(params.revision)
         - name: deleteExisting
           value: "true"
     # A single Task composed entirely of StepActions, demonstrating the
@@ -77,27 +82,3 @@ spec:
                 value: $(params.package)
               - name: packages
                 value: $(params.packages)
----
-apiVersion: tekton.dev/v1
-kind: PipelineRun
-metadata:
-  generateName: golang-stepactions-run-
-spec:
-  pipelineRef:
-    name: golang-stepactions-pipeline
-  params:
-    - name: url
-      value: https://github.com/stretchr/testify
-    - name: package
-      value: github.com/stretchr/testify
-    - name: packages
-      value: "./..."
-  workspaces:
-    - name: shared-workspace
-      volumeClaimTemplate:
-        spec:
-          accessModes:
-            - ReadWriteOnce
-          resources:
-            requests:
-              storage: 256Mi
