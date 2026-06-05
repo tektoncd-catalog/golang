@@ -48,11 +48,6 @@ for base_file in "${BASE_DIR}"/*.yaml; do
     # task dir, replacing task names and paths for the variant.
     if [[ -n "${suffix}" ]]; then
       default_dir="${TASK_DIR}/${base_name}"
-      # Copy OWNERS as-is
-      if [[ -f "${default_dir}/OWNERS" && ! -f "${task_dir}/OWNERS" ]]; then
-        cp "${default_dir}/OWNERS" "${task_dir}/OWNERS"
-        echo "    Copied OWNERS from ${default_dir}/"
-      fi
       # Generate README with variant-specific names and paths
       if [[ -f "${default_dir}/README.md" ]]; then
         sed -e "s|task/${base_name}/${base_name}|task/${task_name}/${task_name}|g" \
