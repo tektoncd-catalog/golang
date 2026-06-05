@@ -75,7 +75,7 @@ spec:
 apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
-  name: golang-stepactions-run-uuid
+  generateName: golang-stepactions-run-
 spec:
   pipelineRef:
     name: golang-stepactions-pipeline
