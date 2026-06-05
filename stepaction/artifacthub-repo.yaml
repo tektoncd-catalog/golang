@@ -1,7 +1,5 @@
 # Artifact Hub repository metadata file for the golang StepActions.
-# NOTE: replace repositoryID with the value Artifact Hub assigns when the
-# StepActions repository is registered, to claim ownership.
-repositoryID: c7e64ea4-71fa-491c-b9bf-a61c72513f75
+repositoryID: 82f59bf4-b291-41d0-960b-d52bbafa713c
 owners: # (optional, used to claim repository ownership)
   - name: Vincent Demeester
     email: vincent@sbr.pm
