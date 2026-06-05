@@ -200,9 +200,7 @@ echo ""
 apply_version_bumps() {
     local f="$1"
     sed \
-        -e "s|app.kubernetes.io/version: \"${CURRENT_VERSION}\"|app.kubernetes.io/version: \"${BARE_VERSION}\"|g" \
-        -e "s|ghcr.io/tektoncd-catalog/golang/golang-build:${CURRENT_TAG}|ghcr.io/tektoncd-catalog/golang/golang-build:${VERSION}|g" \
-        -e "s|ghcr.io/tektoncd-catalog/golang/golang-test:${CURRENT_TAG}|ghcr.io/tektoncd-catalog/golang/golang-test:${VERSION}|g" \
+        -e "s|app.kubernetes.io/version: \"\?${CURRENT_VERSION}\"\?|app.kubernetes.io/version: \"${BARE_VERSION}\"|g" \
         "${f}"
 }
 
