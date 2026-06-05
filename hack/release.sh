@@ -112,7 +112,7 @@ fi
 # --- Bump VERSION (single source of truth) and regenerate task files ---
 echo "--- Bumping VERSION: ${CURRENT_VERSION} -> ${BARE_VERSION}"
 echo "${BARE_VERSION}" > "${ROOT_DIR}/VERSION"
-echo "--- Running hack/generate.sh to regenerate task files at ${BARE_VERSION}..."
+echo "--- Running hack/generate.sh to regenerate task and stepaction files at ${BARE_VERSION}..."
 "${SCRIPT_DIR}/generate.sh"
 
 # --- Generate changelog ---
@@ -186,7 +186,13 @@ echo "${TAG_MESSAGE}"
 echo ""
 
 # --- Files that change at release time ---
-ALL_FILES=("${TASK_FILES[@]}" "VERSION")
+# Discover generated task and stepaction files plus the VERSION marker.
+STEPACTION_FILES=()
+for sadir in "${ROOT_DIR}"/stepaction/*/; do
+    sa=$(basename "${sadir}")
+    [[ -f "${sadir}${sa}.yaml" ]] && STEPACTION_FILES+=("stepaction/${sa}/${sa}.yaml")
+done
+ALL_FILES=("${TASK_FILES[@]}" "${STEPACTION_FILES[@]}" "VERSION")
 
 echo "--- Files to commit:"
 for f in "${ALL_FILES[@]}"; do
@@ -196,16 +202,16 @@ echo ""
 
 if [[ "${DRY_RUN}" == true ]]; then
     echo "--- Dry run: showing changes ---"
-    git --no-pager diff -- VERSION task/ || true
+    git --no-pager diff -- VERSION task/ stepaction/ || true
     echo ""
     echo "--- Restoring working tree (dry run) ---"
-    git checkout -- VERSION task/ 2>/dev/null || true
+    git checkout -- VERSION task/ stepaction/ 2>/dev/null || true
     echo "Dry run complete. Run without --dry-run to apply."
     exit 0
 fi
 
 echo "--- Committing..."
-git add VERSION task/
+git add VERSION task/ stepaction/
 git commit --signoff --message "chore: bump version to ${VERSION}"
 
 echo "--- Pushing to main..."
