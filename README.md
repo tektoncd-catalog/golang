@@ -25,6 +25,7 @@ available in Debian (default) and Alpine variants.
 | [`golang-build`](stepaction/golang-build/) | Build Go packages | ✅ |
 | [`golang-test`](stepaction/golang-test/) | Run Go tests | ✅ |
 | [`golang-fmt`](stepaction/golang-fmt/) | Check formatting (`gofmt -l`) | StepAction-only |
+| [`golang-goimports`](stepaction/golang-goimports/) | Check formatting + imports (`goimports -l`) | StepAction-only |
 | [`golang-vet`](stepaction/golang-vet/) | Static analysis (`go vet`) | StepAction-only |
 | [`golang-fix`](stepaction/golang-fix/) | Modernize code (`go fix`, Go 1.26+) | StepAction-only |
 | [`govulncheck`](stepaction/govulncheck/) | Vulnerability scanning | StepAction-only |

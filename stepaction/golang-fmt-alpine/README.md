@@ -18,6 +18,7 @@ kubectl apply -f https://raw.githubusercontent.com/tektoncd-catalog/golang/main/
 |-----------|-------------|---------|
 | `source-path` | Path to the Go source code to operate on | _(required)_ |
 | `paths` | Paths to check for formatting | `.` |
+| `skip-dirs` | Directories to exclude (pipe-separated regex) | `vendor` |
 | `version` | Golang version to use | `1.26` |
 
 ## Platforms

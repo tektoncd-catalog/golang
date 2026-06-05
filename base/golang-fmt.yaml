@@ -32,6 +32,9 @@ spec:
     - name: paths
       description: paths to check for formatting
       default: .
+    - name: skip-dirs
+      description: directories to exclude (pipe-separated regex, e.g. 'vendor|third_party')
+      default: vendor
     - name: version
       description: golang version to use
       default: "1.26"
@@ -40,8 +43,14 @@ spec:
   env:
     - name: PARAM_PATHS
       value: $(params.paths)
+    - name: SKIP_DIRS
+      value: $(params.skip-dirs)
   script: |
-    unformatted=$(gofmt -l ${PARAM_PATHS})
+    if [ -n "${SKIP_DIRS}" ]; then
+      unformatted=$(find ${PARAM_PATHS} -name '*.go' | grep -Ev "^./(${SKIP_DIRS})/" | xargs gofmt -l 2>/dev/null)
+    else
+      unformatted=$(gofmt -l ${PARAM_PATHS})
+    fi
     if [ -n "${unformatted}" ]; then
       echo "The following files are not formatted:"
       echo "${unformatted}"

@@ -1,8 +1,8 @@
-# Generated from base/golang-fmt.yaml — do not edit directly.
+# Generated from base/golang-goimports.yaml — do not edit directly.
 apiVersion: tekton.dev/v1beta1
 kind: StepAction
 metadata:
-  name: golang-fmt-alpine
+  name: golang-goimports
   annotations:
     artifacthub.io/category: integration-delivery
     artifacthub.io/license: Apache-2.0
@@ -19,14 +19,14 @@ metadata:
     tekton.dev/catalog-support-tier: verified
     tekton.dev/catalog-url: https://github.com/tektoncd-catalog/golang
     tekton.dev/categories: Code Quality
-    tekton.dev/displayName: golang fmt (alpine)
+    tekton.dev/displayName: golang goimports
     tekton.dev/pipelines.minVersion: 0.40.0
     tekton.dev/platforms: linux/amd64,linux/s390x,linux/ppc64le,linux/arm64
     tekton.dev/tags: lint
   labels:
     app.kubernetes.io/version: 1.2.0
 spec:
-  description: This StepAction checks that Go source code is formatted with gofmt and fails if any file needs formatting. Uses the Alpine-based Go image for smaller footprint.
+  description: This StepAction checks that Go source code is formatted and imports are organized using goimports. It is a superset of gofmt — it also groups and sorts import statements.
   params:
     - name: source-path
       description: Path to the Go source code to operate on.
@@ -37,27 +37,36 @@ spec:
     - name: skip-dirs
       description: directories to exclude (pipe-separated regex, e.g. 'vendor|third_party')
       default: vendor
+    - name: goimports-version
+      description: version of goimports to install
+      default: latest
     - name: version
       description: golang version to use
       default: "1.26"
-  image: docker.io/library/golang:$(params.version)-alpine
+  image: docker.io/library/golang:$(params.version)
   workingDir: $(params.source-path)
   env:
+    - name: GOBIN
+      value: /tekton/home/go/bin
     - name: PARAM_PATHS
       value: $(params.paths)
     - name: SKIP_DIRS
       value: $(params.skip-dirs)
+    - name: GOIMPORTS_VERSION
+      value: $(params.goimports-version)
   script: |
+    export PATH="${GOBIN}:${PATH}"
+    go install golang.org/x/tools/cmd/goimports@${GOIMPORTS_VERSION}
     if [ -n "${SKIP_DIRS}" ]; then
-      unformatted=$(find ${PARAM_PATHS} -name '*.go' | grep -Ev "^./(${SKIP_DIRS})/" | xargs gofmt -l 2>/dev/null)
+      unformatted=$(find ${PARAM_PATHS} -name '*.go' | grep -Ev "^./(${SKIP_DIRS})/" | xargs goimports -l 2>/dev/null)
     else
-      unformatted=$(gofmt -l ${PARAM_PATHS})
+      unformatted=$(goimports -l ${PARAM_PATHS})
     fi
     if [ -n "${unformatted}" ]; then
-      echo "The following files are not formatted:"
+      echo "The following files have incorrect formatting or imports:"
       echo "${unformatted}"
       echo ""
-      echo "Run 'gofmt -w' on them to fix."
+      echo "Run 'goimports -w' on them to fix."
       exit 1
     fi
-    echo "All Go files are correctly formatted."
+    echo "All Go files have correct formatting and imports."
