@@ -1,10 +1,13 @@
 # Golang Tasks for Tekton
 
-[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/golang)](https://artifacthub.io/packages/search?repo=golang)
+[![Artifact Hub Tasks](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/golang)](https://artifacthub.io/packages/search?repo=golang)
+[![Artifact Hub StepActions](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/golang-stepactions)](https://artifacthub.io/packages/search?repo=golang-stepactions)
 
 This repository contains verified Tekton Tasks and StepActions for building and testing Go projects.
 
 ## Tasks
+
+Browse all Tasks on [Artifact Hub](https://artifacthub.io/packages/search?kind=7&repo=golang).
 
 | Task | Description | Default Go version |
 |--------------------|-------------|--------------------|
@@ -19,6 +22,8 @@ This repository contains verified Tekton Tasks and StepActions for building and 
 steps you can combine into a single Task — e.g. `git-clone` + `golang-fmt` +
 `golang-vet` + `golang-build` + `golang-test`. Each StepAction is also
 available in Debian (default) and Alpine variants.
+
+Browse all StepActions on [Artifact Hub](https://artifacthub.io/packages/search?kind=11&repo=golang-stepactions).
 
 | StepAction | Description | Task equivalent |
 |------------|-------------|-----------------|
