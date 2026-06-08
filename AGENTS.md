@@ -23,11 +23,12 @@ detail see [DEVELOPMENT.md](DEVELOPMENT.md).
    `base/` and/or `catalog.yaml`, then run `./hack/generate.sh`. CI's
    verify-generated step diffs committed files against freshly generated ones
    and fails on mismatch.
-2. **No `$(params.*)` in StepAction `script:` blocks** — injection risk and not
-   supported. Pass values via `env:` and reference the env var (e.g.
+2. **No `$(params.*)` in `script:` blocks** (Tasks *and* StepActions) —
+   injection risk. Pass values via `env:` and reference the env var (e.g.
    `${SOURCE_PATH}`, `${PARAM_PATHS}`). Workspace refs in scripts become
    `${SOURCE_PATH}`; in `workingDir`/`env` values they become
-   `$(params.source-path)`.
+   `$(params.source-path)`. (For StepActions `$(params.*)` in scripts is also
+   not supported at all.)
 3. **Templates are version-agnostic.** The version lives only in the `VERSION`
    file and is injected as the `app.kubernetes.io/version` label at generation
    time. Never hardcode a version in `base/`.
@@ -58,7 +59,7 @@ Generation needs `yq` (mikefarah) and either `uv` or a `python3` with PyYAML.
 
 - Forgetting to run `./hack/generate.sh` after editing a template → CI
   verify-generated fails.
-- Putting `$(params.*)` in a StepAction script → invalid; use env vars.
+- Putting `$(params.*)` in a `script:` block (Task or StepAction) → use env vars.
 - Adding a version to a `base/` template → breaks determinism; versions come
   from `VERSION`.
 - Editing a generated `README.md` for an `-alpine` variant → it's regenerated
