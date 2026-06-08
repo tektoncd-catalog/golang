@@ -17,27 +17,31 @@ detail see [DEVELOPMENT.md](DEVELOPMENT.md).
 | `test/` | e2e runners (`e2e-tests.sh`, `e2e-tests-alpine.sh`, `e2e-stepactions.sh`, `e2e-bundle-test.sh`). |
 | `.github/workflows/` | `build.yaml` (lint/verify/e2e), `release.yaml` (bundle publish). |
 
-## Critical invariants
+## Critical Rules
 
-- **Never edit `task/` or `stepaction/` directly.** Edit `base/` and/or
-  `catalog.yaml`, then run `./hack/generate.sh`. CI's verify-generated step
-  diffs committed files against freshly generated ones and fails on mismatch.
-- **Templates are version-agnostic.** The version lives only in `VERSION`.
-- **`$(params.*)` is NOT allowed in StepAction `script:` blocks.** Pass values
-  via `env:` and reference the env var (e.g. `${SOURCE_PATH}`, `${PARAM_PATHS}`).
-  Workspace refs in scripts become `${SOURCE_PATH}`; in `workingDir`/`env`
-  values they become `$(params.source-path)`.
-- **Commits must be signed off** (DCO): `git commit --signoff`.
-- **Use conventional commit prefixes** (`feat:`, `fix:`, `docs:`, `chore:`,
-  `ci:`) — the changelog is derived from them.
+1. **Never edit `task/` or `stepaction/` directly.** They are generated. Edit
+   `base/` and/or `catalog.yaml`, then run `./hack/generate.sh`. CI's
+   verify-generated step diffs committed files against freshly generated ones
+   and fails on mismatch.
+2. **No `$(params.*)` in StepAction `script:` blocks** — injection risk and not
+   supported. Pass values via `env:` and reference the env var (e.g.
+   `${SOURCE_PATH}`, `${PARAM_PATHS}`). Workspace refs in scripts become
+   `${SOURCE_PATH}`; in `workingDir`/`env` values they become
+   `$(params.source-path)`.
+3. **Templates are version-agnostic.** The version lives only in the `VERSION`
+   file and is injected as the `app.kubernetes.io/version` label at generation
+   time. Never hardcode a version in `base/`.
+4. **Sign off every commit** (DCO / EasyCLA): `git commit --signoff`.
+5. **Use conventional commit prefixes** (`feat:`, `fix:`, `docs:`, `chore:`,
+   `ci:`) — the release changelog is derived from them.
 
 ## Common commands
 
 ```bash
 ./hack/generate.sh                      # regenerate task/ + stepaction/
 ./hack/generate.sh my-catalog.yaml      # regenerate from a forked manifest
-./hack/release.sh v1.3.0 --dry-run      # preview a release (restores the tree)
-./hack/release.sh v1.3.0 --dry-run --llm# preview with gh copilot changelog
+./hack/release.sh v1.3.0 --dry-run       # preview a release (restores the tree)
+./hack/release.sh v1.3.0 --dry-run --llm # preview with gh copilot changelog
 ./test/e2e-tests.sh                     # e2e in a kind cluster (needs a cluster)
 ```
 
