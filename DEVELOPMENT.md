@@ -106,11 +106,12 @@ deriving a StepAction is mechanical:
    ```
 4. Add e2e coverage under `test/` if applicable, and update `README.md`.
 
-### Tip: StepAction script constraints
+### Tip: script parameter constraints
 
-`$(params.*)` is **not** allowed inside StepAction `script:` blocks. Pass
+Avoid `$(params.*)` inside `script:` blocks for **both Tasks and StepActions**
+— it's an injection risk, and for StepActions it isn't supported at all. Pass
 parameters into the script via `env:` and reference the env var instead. The
-golang StepActions follow this pattern (e.g. `PARAM_PATHS`, `SKIP_DIRS`,
+golang templates follow this pattern (e.g. `PARAM_PATHS`, `SKIP_DIRS`,
 `SOURCE_PATH`).
 
 ## Adding a new variant
