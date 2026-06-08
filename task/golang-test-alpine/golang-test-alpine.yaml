@@ -25,27 +25,27 @@ metadata:
     tekton.dev/tags: test
     artifacthub.io/changes: |-
       - kind: added
-      description: Added StepActions and StepAction-only Go tools to the catalog.
+        description: "Added StepActions and StepAction-only Go tools to the catalog."
       - kind: added
-      description: Added golang-goimports StepAction and e2e coverage in the composition pipeline.
+        description: "Added golang-goimports StepAction and e2e coverage in the composition pipeline."
       - kind: added
-      description: Added skip-dirs parameter support for golang-fmt.
+        description: "Added skip-dirs parameter support for golang-fmt."
       - kind: changed
-      description: Wired StepActions across tests, READMEs, CI, and release automation.
+        description: "Wired StepActions across tests, READMEs, CI, and release automation."
       - kind: changed
-      description: Injected artifacthub.io/changes into generated Task and StepAction YAMLs during release.
+        description: "Injected artifacthub.io/changes into generated Task and StepAction YAMLs during release."
       - kind: changed
-      description: Made VERSION the single source of truth and removed in-repo task signing.
+        description: "Made VERSION the single source of truth and removed in-repo task signing."
       - kind: fixed
-      description: Replaced $(params.*) usage in scripts with environment-variable based access for safety.
+        description: "Replaced $(params.) usage in scripts with environment-variable based access for safety."
       - kind: fixed
-      description: Fixed release.sh to commit StepAction outputs alongside Task outputs.
+        description: "Fixed release.sh to commit StepAction outputs alongside Task outputs."
       - kind: fixed
-      description: Corrected Artifact Hub repositoryID for StepActions and resolved review follow-up issues.
+        description: "Corrected Artifact Hub repositoryID for StepActions and resolved review follow-up issues."
       - kind: fixed
-      description: Hardened e2e behavior by removing flaky composition bits and improving test robustness.
+        description: "Hardened e2e behavior by removing flaky composition bits and improving test robustness."
       - kind: changed
-      description: Expanded contributor/maintainer docs (DEVELOPMENT.md, CONTRIBUTING.md, AGENTS.md) and updated platform guidance.
+        description: "Expanded contributor/maintainer docs (DEVELOPMENT.md, CONTRIBUTING.md, AGENTS.md) and updated platform guidance."
   labels:
     app.kubernetes.io/version: 1.3.0
 spec:

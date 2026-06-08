@@ -71,6 +71,34 @@ BARE_VERSION="${VERSION#v}"
 
 cd "${ROOT_DIR}"
 
+# --- Artifact Hub changelog helpers ---
+# AH parses the artifacthub.io/changes block as YAML, so every description must
+# be quoted and free of characters that break YAML-in-YAML. See:
+# https://artifacthub.io/docs/topics/annotations/tekton/
+sanitize_desc() {
+    echo "$1" \
+        | sed 's/[{}]//g; s/[][&*#?|<>=!%@`]//g' \
+        | sed 's/  */ /g; s/^ //; s/ $//'
+}
+
+# Normalize a raw changes block (stdin) into canonical, correctly-indented and
+# quoted entries (stdout): a YAML sequence of {kind, description} maps.
+normalize_ah_changes() {
+    local line stripped desc
+    while IFS= read -r line || [[ -n "${line}" ]]; do
+        stripped="${line#"${line%%[![:space:]]*}"}"  # left-trim
+        case "${stripped}" in
+            -\ kind:*)
+                printf -- '- kind: %s\n' "$(echo "${stripped#*kind:}" | sed 's/^ //')" ;;
+            kind:*)
+                printf -- '- kind: %s\n' "$(echo "${stripped#kind:}" | sed 's/^ //')" ;;
+            description:*)
+                desc=$(sanitize_desc "${stripped#description:}")
+                printf '  description: "%s"\n' "${desc}" ;;
+        esac
+    done
+}
+
 # --- Task files to update (discover all golang-* tasks) ---
 TASK_FILES=()
 for taskdir in "${ROOT_DIR}"/task/golang-*; do
@@ -149,7 +177,7 @@ Output the two sections separated by the exact string ---SEPARATOR--- on its own
     LLM_OUTPUT=$(gh copilot -p "${PROMPT}" 2>/dev/null || echo "")
 
     if [[ -n "${LLM_OUTPUT}" ]]; then
-        AH_CHANGES=$(echo "${LLM_OUTPUT}" | sed -n '/^ *- kind:/,/---SEPARATOR---/p' | grep -v '^---SEPARATOR---' | sed 's/^[[:space:]]*//')
+        AH_CHANGES=$(echo "${LLM_OUTPUT}" | sed -n '/^ *- kind:/,/---SEPARATOR---/p' | grep -v '^---SEPARATOR---')
         TAG_MESSAGE=$(echo "${LLM_OUTPUT}" | sed -n '/^---SEPARATOR---$/,$ p' | tail -n +2 | sed '/^$/d; /^[[:space:]]*$/d' | sed '1{/^$/d}')
     else
         echo "Warning: gh copilot not available, falling back to git log"
@@ -177,9 +205,15 @@ Changes since ${CURRENT_TAG}:
 $(echo "${COMMITS}" | sed 's/^[a-f0-9]* /- /')"
 fi
 
+# Normalize to canonical, quoted, correctly-indented YAML entries so Artifact
+# Hub can parse the changes block (descriptions are always quoted).
+if [[ -n "${AH_CHANGES}" ]]; then
+    AH_CHANGES="$(printf '%b' "${AH_CHANGES}" | normalize_ah_changes)"
+fi
+
 echo ""
 echo "--- Artifact Hub changelog:"
-echo -e "${AH_CHANGES}"
+echo "${AH_CHANGES}"
 echo ""
 echo "--- Tag message:"
 echo "${TAG_MESSAGE}"
@@ -197,7 +231,7 @@ ALL_FILES=("${TASK_FILES[@]}" "${STEPACTION_FILES[@]}" "VERSION")
 # --- Inject artifacthub.io/changes into all generated YAMLs ---
 if [[ -n "${AH_CHANGES}" ]]; then
     echo "--- Injecting artifacthub.io/changes annotation..."
-    AH_CHANGES_BLOCK="$(printf '%b' "${AH_CHANGES}")"
+    AH_CHANGES_BLOCK="${AH_CHANGES}"
     for f in "${TASK_FILES[@]}" "${STEPACTION_FILES[@]}"; do
         AH_CHANGES_BLOCK="${AH_CHANGES_BLOCK}" yq -i \
             '.metadata.annotations["artifacthub.io/changes"] = strenv(AH_CHANGES_BLOCK)' \
