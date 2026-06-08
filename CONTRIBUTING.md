@@ -7,18 +7,21 @@ repository is part of the Tekton Catalog and follows the broader
 For technical details on how the repo is structured and generated, see
 [DEVELOPMENT.md](DEVELOPMENT.md).
 
-## Developer Certificate of Origin (DCO)
+## Developer Certificate of Origin (DCO) / CLA
 
 All commits must be signed off to certify the
 [Developer Certificate of Origin](https://developercertificate.org/). Add a
 `Signed-off-by` trailer to every commit:
 
 ```bash
-git commit --signoff -m "feat: add golang-lint StepAction"
+git commit --signoff -m "feat: add govulncheck StepAction"
 ```
 
-The sign-off line must match the author's name and email. CI rejects PRs with
-unsigned commits.
+The sign-off line must match the author's name and email. Contributions are
+also covered by the Linux Foundation
+[EasyCLA](https://github.com/tektoncd/community/blob/main/process.md#contributor-license-agreements)
+check, which runs on pull requests — follow its prompt to sign the CLA the
+first time you contribute.
 
 ## Pull request workflow
 
