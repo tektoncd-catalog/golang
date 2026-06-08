@@ -33,8 +33,19 @@ ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 echo "--- Installing Tekton Pipelines ${PIPELINE_VERSION}"
 kubectl apply --filename "https://github.com/tektoncd/pipeline/releases/download/${PIPELINE_VERSION}/release.yaml"
 echo "--- Waiting for Tekton Pipelines to be ready"
-kubectl wait --for=condition=available --timeout=120s deployment/tekton-pipelines-controller -n tekton-pipelines
-kubectl wait --for=condition=available --timeout=120s deployment/tekton-pipelines-webhook -n tekton-pipelines
+# Wait for every control-plane deployment to be Available (cold kind nodes may
+# still be pulling images), then wait for the admission webhook to actually
+# have ready endpoints before applying any Tekton resources.
+kubectl wait --for=condition=available --timeout=300s \
+    deployment --all -n tekton-pipelines
+echo "--- Waiting for the admission webhook to serve"
+for _ in $(seq 1 30); do
+    if [[ -n "$(kubectl get endpoints tekton-pipelines-webhook \
+        -n tekton-pipelines -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null)" ]]; then
+        break
+    fi
+    sleep 5
+done
 
 echo "--- Enabling StepActions (enable-step-actions)"
 kubectl patch configmap feature-flags -n tekton-pipelines \
@@ -66,23 +77,61 @@ FAILED=0
 PASSED=0
 TOTAL=0
 
+# Snapshot each PipelineRun's spec (stripped of status and volatile metadata)
+# so we can recreate it if it hits a transient flake. Dependency-free: kubectl
+# -o yaml orders keys with status last, so cutting from `status:` to EOF is safe.
+SNAP_DIR="$(mktemp -d)"
+snapshot_run() {
+    kubectl get pipelinerun/"$1" -o yaml --show-managed-fields=false 2>/dev/null \
+        | sed -e '/^status:/,$d' \
+              -e '/^  resourceVersion:/d' \
+              -e '/^  uid:/d' \
+              -e '/^  creationTimestamp:/d' \
+              -e '/^  generation:/d' \
+              -e '/^  selfLink:/d' \
+        > "${SNAP_DIR}/$1.yaml"
+}
+for pr in ${PIPELINERUNS}; do
+    snapshot_run "${pr}"
+done
+
+wait_for_run() {
+    kubectl wait --for=condition=Succeeded --timeout="${TIMEOUT}" pipelinerun/"$1" 2>/dev/null
+}
+
+dump_run() {
+    kubectl get pipelinerun/"$1" -o jsonpath='{.status.conditions[*].message}' 2>/dev/null || true
+    echo ""
+    kubectl get taskrun -l tekton.dev/pipelineRun="$1" \
+        -o custom-columns='NAME:.metadata.name,STATUS:.status.conditions[0].reason,MESSAGE:.status.conditions[0].message' 2>/dev/null || true
+    for pod in $(kubectl get pods -l tekton.dev/pipelineRun="$1" -o name 2>/dev/null); do
+        echo "  >> ${pod}"
+        kubectl logs "${pod}" --all-containers 2>/dev/null || true
+    done
+}
+
 echo "--- Waiting for PipelineRuns to complete (timeout: ${TIMEOUT})"
 for pr in ${PIPELINERUNS}; do
     TOTAL=$((TOTAL + 1))
     echo -n "  ${pr} ... "
-    if kubectl wait --for=condition=Succeeded --timeout="${TIMEOUT}" pipelinerun/"${pr}" 2>/dev/null; then
+    if wait_for_run "${pr}"; then
+        echo "PASSED"
+        PASSED=$((PASSED + 1))
+        continue
+    fi
+
+    # Retry once: transient pod sandbox / network / image-pull blips on a
+    # single-node kind cluster can stall a pod before its container ever runs.
+    # Recreate the PipelineRun from its snapshot and wait again before failing.
+    echo -n "FLAKY, retrying ... "
+    kubectl delete pipelinerun/"${pr}" --wait=true 2>/dev/null || true
+    kubectl apply -f "${SNAP_DIR}/${pr}.yaml" >/dev/null 2>&1 || true
+    if wait_for_run "${pr}"; then
         echo "PASSED"
         PASSED=$((PASSED + 1))
     else
         echo "FAILED"
-        kubectl get pipelinerun/"${pr}" -o jsonpath='{.status.conditions[*].message}' 2>/dev/null || true
-        echo ""
-        kubectl get taskrun -l tekton.dev/pipelineRun="${pr}" \
-            -o custom-columns='NAME:.metadata.name,STATUS:.status.conditions[0].reason,MESSAGE:.status.conditions[0].message' 2>/dev/null || true
-        for pod in $(kubectl get pods -l tekton.dev/pipelineRun="${pr}" -o name 2>/dev/null); do
-            echo "  >> ${pod}"
-            kubectl logs "${pod}" --all-containers 2>/dev/null || true
-        done
+        dump_run "${pr}"
         FAILED=$((FAILED + 1))
     fi
 done
