@@ -2,6 +2,7 @@
 
 [![Artifact Hub Tasks](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/golang)](https://artifacthub.io/packages/search?repo=golang)
 [![Artifact Hub StepActions](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/golang-stepactions)](https://artifacthub.io/packages/search?repo=golang-stepactions)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Ftektoncd-catalog%2Fgolang.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Ftektoncd-catalog%2Fgolang?ref=badge_shield)
 
 This repository contains verified Tekton Tasks and StepActions for building and testing Go projects.
 
@@ -232,3 +233,7 @@ params:
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Ftektoncd-catalog%2Fgolang.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Ftektoncd-catalog%2Fgolang?ref=badge_large)
